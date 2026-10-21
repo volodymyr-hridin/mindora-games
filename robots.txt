@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://volodymyr-hridin.github.io/mindora-games/sitemap.xml
