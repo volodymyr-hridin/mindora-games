@@ -1,0 +1,431 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#101c39"><meta name="description" content="Play Mindora Hole World, a colorful 3D arcade game. Move the magic portal, collect toys, grow bigger and beat the clock."><title>Hole World - Tokyo Art Preview | Mindora Games</title><link rel="canonical" href="https://playmindora.com/hole-world.html">
+<style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0c1834;color:white;font-family:system-ui,-apple-system,sans-serif}#game{position:fixed;inset:0;touch-action:none;overscroll-behavior:none}canvas{display:block;touch-action:none}#hud{position:fixed;z-index:5;top:max(14px,env(safe-area-inset-top));left:12px;right:12px;display:flex;gap:9px;align-items:center;justify-content:space-between;pointer-events:none}.pill{background:#19295be8;border:2px solid #7188e4;box-shadow:0 5px 0 #09143c,0 9px 24px #0005;border-radius:18px;padding:9px 12px;text-align:center;font-weight:850;text-shadow:0 2px 2px #0006;min-width:70px}.pill small{display:block;font-size:10px;letter-spacing:1.2px;color:#c6d9ff}.pill strong{font-size:22px}.pill.gold{border-color:#ffd568;background:#7e4b31ee}#progress{position:fixed;z-index:5;top:calc(max(14px,env(safe-area-inset-top)) + 76px);left:15px;right:15px;height:12px;border-radius:15px;background:#13244e;border:2px solid #7690c8;overflow:hidden;pointer-events:none}#fill{height:100%;width:0%;background:linear-gradient(90deg,#53edcb,#b0ff85);transition:width .2s}#level{position:fixed;top:calc(max(14px,env(safe-area-inset-top)) + 97px);left:18px;font-size:12px;font-weight:800;letter-spacing:1px;color:#e9f8ff;text-shadow:0 2px 4px #000;pointer-events:none;z-index:5}#notice{position:fixed;top:29%;left:0;right:0;text-align:center;z-index:8;font-size:clamp(22px,7vw,40px);font-weight:1000;color:#fff3a0;text-shadow:0 4px 0 #84533a,0 6px 15px #0009;pointer-events:none;opacity:0;transition:opacity .2s}#notice.show{opacity:1}#bottom{position:fixed;z-index:6;bottom:max(15px,env(safe-area-inset-bottom));left:12px;right:12px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}#bottom a,#bottom button{pointer-events:auto;color:#fff;background:#1b2b61e8;border:2px solid #8da8ee;border-radius:16px;padding:10px 13px;text-decoration:none;font-weight:800;font-size:13px}#bottom .hint{font-size:12px;color:#f8ffdd;text-align:center;text-shadow:0 2px 5px #000;max-width:170px}#overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:linear-gradient(#0c1b43d9,#071127ee);padding:20px}#overlay.hidden{display:none}.panel{width:min(440px,100%);padding:27px 23px;border-radius:28px;text-align:center;background:linear-gradient(155deg,#314d94,#182a5c 65%,#16234b);border:2px solid #9cc2ff;box-shadow:0 15px 0 #0a1637,0 26px 65px #0009}.panel h1{font-size:clamp(34px,9vw,56px);line-height:1.03;letter-spacing:-2px;margin:12px 0 10px;color:#ffe08e;text-shadow:0 5px 0 #a36d53}.panel p{color:#d7e9ff;line-height:1.55}.panel .emoji{font-size:68px;filter:drop-shadow(0 7px 2px #0004)}.panel button{border:0;border-radius:18px;background:linear-gradient(#fef29e,#ffc15a);box-shadow:0 6px 0 #bd7436;padding:15px 34px;font-size:20px;font-weight:950;color:#56371c;cursor:pointer;margin:12px 0}.panel .note{font-size:12px;color:#b6d3f3}#error{display:none;position:fixed;inset:0;z-index:30;background:#142246;padding:25px;text-align:center;align-content:center}#error a{color:#ffe08e}@media(max-width:390px){.pill{padding:7px 9px;min-width:62px}.pill strong{font-size:18px}}</style>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',wait_for_update:500})</script><script async src="https://www.googletagmanager.com/gtag/js?id=G-FJLZEC3YXJ"></script><script>gtag('js',new Date());gtag('config','G-FJLZEC3YXJ')</script><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7353380398910735" crossorigin="anonymous"></script>
+</head><body><div id="game" aria-label="3D Hole World game area"></div><div id="hud"><div class="pill"><small>TIME</small><strong id="time">300</strong></div><div class="pill gold"><small>COLLECTED</small><strong id="score">0 / 75</strong></div><div class="pill"><small>PORTAL</small><strong id="size">LV 1</strong></div></div><div id="progress"><div id="fill"></div></div><div id="level">🌈 CANDY GARDEN · LEVEL 1</div><div id="notice"></div><div id="bottom"><a href="./">← Games</a><span class="hint">Hold + drag · Desktop: WASD / arrows</span><button id="sound" aria-label="Toggle sound">🔊</button></div><div id="overlay"><section class="panel"><div class="emoji" id="face">🌀🍭</div><h1 id="heading">HOLE WORLD</h1><p id="description">A tiny portal. A world of treasures! Touch, drag in a direction and <b>keep holding</b> to move continuously. First swallow <b>small toys, candy and gifts</b>. After 28 items, your hole can swallow <b>cars</b> too. Collect <b>75 objects</b> in five minutes.</p><button id="play">LET'S PLAY ▶</button><div class="note">Free 3D browser game · No install · Progress saved locally</div></section></div><div id="error">This game needs WebGL and a modern browser.<p><a href="./">Back to Mindora Games</a></p></div>
+<script>
+(function(){
+const b=document.getElementById('play'),overlay=document.getElementById('overlay'),desc=document.getElementById('description');
+window.__holeReady=false;
+b.textContent='LOADING 3D…';
+b.addEventListener('click',function(){
+if(window.__holeReady)return;
+desc.textContent='The 3D engine has not finished loading. Please reload this page. If this continues, try Safari or Chrome directly.';
+b.textContent='RELOAD GAME ↻';
+b.onclick=null;
+b.addEventListener('click',()=>location.reload(),{once:true});
+},{once:true});
+window.setTimeout(function(){if(!window.__holeReady){b.textContent='RELOAD GAME ↻';desc.textContent='The 3D engine did not load. Tap to reload, or open this game in Safari or Chrome.'}},12000);
+window.addEventListener('error',function(e){if(!window.__holeReady){desc.textContent='Game startup error: '+(e.message||'3D engine failed to load');b.textContent='RELOAD GAME ↻'}});
+window.addEventListener('unhandledrejection',function(e){if(!window.__holeReady){desc.textContent='3D engine load failed. Please try reloading or using another browser.';b.textContent='RELOAD GAME ↻'}});
+})();
+</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+const launchButton=document.getElementById("play");launchButton.disabled=true;launchButton.textContent="LOADING 3D…";
+let THREE;
+try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js')}
+catch(primaryError){try{THREE=await import('https://unpkg.com/three@0.170.0/build/three.module.js')}
+catch(secondaryError){document.getElementById('error').style.display='block';document.getElementById('error').innerHTML='Unable to load the 3D engine. Please check your connection and refresh the page.<p><a href="./">Back to Mindora Games</a></p>';throw secondaryError}}
+const $=id=>document.getElementById(id),W=62,D=90,container=$('game');
+let ripple,effectMat,sparkPool=[],sparkCursor=0,swirlStars=[];
+let renderer,scene,camera,ground,portal,ring,shadow,steerTarget=null,items=[],decor=[],particles=[],playing=false,last=0,elapsed=0,score=0,level=1,goal=75,time=300,remaining=300,radius=1.15,dragging=false,prevPointer=null,activePointer=null,joystick={x:0,y:0},soundOn=true,audio=null,noticeTimer=null;
+const track=(name,extra={})=>{try{gtag('event',name,{game_name:'hole_world',...extra})}catch{}};
+const color=(hex)=>new THREE.MeshStandardMaterial({color:hex,roughness:.62,metalness:.02});
+const mats={grass:color('#87c952'),grass2:color('#78b845'),edge:color('#6eaa42'),water:color('#54c9e6'),pink:color('#ff71ae'),orange:color('#ffad4c'),yellow:color('#ffe17b'),purple:color('#8e79fa'),blue:color('#5fa8fa'),mint:color('#66e5bd'),white:color('#fff2dc'),wood:color('#bd8557'),dark:color('#0b1736'),black:new THREE.MeshBasicMaterial({color:0x030611,side:THREE.DoubleSide}),ring:new THREE.MeshStandardMaterial({color:0x2b56b5,metalness:.25,roughness:.26}),rim:new THREE.MeshStandardMaterial({color:0x6ef7ff,emissive:0x147aab,emissiveIntensity:.5,metalness:.35,roughness:.18})};
+const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.SphereGeometry(1,12,9),cylGeo=new THREE.CylinderGeometry(1,1,1,12);
+function mesh(geo,mat,parent=scene){const o=new THREE.Mesh(geo,mat);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o}
+function makeBox(x,y,z,sx,sy,sz,mat,parent=scene){const m=mesh(boxGeo,mat,parent);m.position.set(x,y,z);m.scale.set(sx,sy,sz);return m}
+function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.position.set(x,y,z);m.scale.setScalar(r);return m}
+function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b9dce5');scene.fog=new THREE.Fog('#b9dce5',46,105);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(0,23,39);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xfff6e9,0x718c8c,2.1));const sun=new THREE.DirectionalLight(0xffd4a5,2.7);sun.position.set(-9,23,12);sun.castShadow=false;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
+const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,mats.water);ocean.receiveShadow=false;ground=makeBox(0,-.45,0,W,.8,D,mats.grass);ground.receiveShadow=true;makeBox(0,-.89,0,W+.3,.18,D+.3,mats.edge);
+const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=.19;disk.renderOrder=100;disk.material.depthTest=false;disk.material.depthWrite=false;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.205;ring.renderOrder=102;ring.material.depthTest=false;ring.material.depthWrite=false;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.208;inner.renderOrder=101;inner.material.depthTest=false;inner.material.depthWrite=false;shadow=holeGroup;holeGroup.position.set(0,.04,11);
+// Lightweight portal effects: pulsing energy rings and collectible sparkles.
+effectMat=new THREE.MeshBasicMaterial({color:0x73e5f3,transparent:true,opacity:.58,depthWrite:false});
+ripple=new THREE.Mesh(new THREE.TorusGeometry(1.19,.027,6,72),effectMat);
+ripple.rotation.x=-Math.PI/2;ripple.position.y=.215;ripple.renderOrder=103;effectMat.depthTest=false;holeGroup.add(ripple);
+const sparkGeo=new THREE.OctahedronGeometry(.085,0);
+const sparkMats=[new THREE.MeshBasicMaterial({color:0xffdf8c}),new THREE.MeshBasicMaterial({color:0x8ce9fa}),new THREE.MeshBasicMaterial({color:0xff98c8})];
+sparkPool=[];
+for(let k=0;k<28;k++){const sp=new THREE.Mesh(sparkGeo,sparkMats[k%3]);sp.visible=false;scene.add(sp);sparkPool.push({mesh:sp,life:0,vx:0,vy:0,vz:0})}
+sparkCursor=0;
+// Continuous inward spiral of starlight, visually pulled into the black hole.
+const starGeometry=new THREE.OctahedronGeometry(.042,0);
+const starColors=[0xffffff,0x92e7ff,0xffd88b,0xb9a2ff];
+swirlStars=[];
+for(let k=0;k<24;k++){
+const mat=new THREE.MeshBasicMaterial({color:starColors[k%starColors.length],transparent:true,opacity:.95,depthTest:false,depthWrite:false});
+const star=new THREE.Mesh(starGeometry,mat);star.renderOrder=105;holeGroup.add(star);
+swirlStars.push({mesh:star,phase:k/24,angle:k*2.399})
+}
+window.holeBurst=function(x,z,size){
+const count=5+Math.min(5,Math.round(size*2));
+for(let k=0;k<count;k++){const p=sparkPool[sparkCursor++%sparkPool.length],angle=(k/count)*Math.PI*2;
+p.life=.36+Math.random()*.24;p.mesh.visible=true;
+p.mesh.position.set(x,.18,z);p.mesh.scale.setScalar(.65+Math.random()*.8);
+p.vx=Math.cos(angle)*(1.2+Math.random()*1.5);
+p.vz=Math.sin(angle)*(1.2+Math.random()*1.5);p.vy=1.8+Math.random()*1.3}
+}
+resize();window.addEventListener('resize',resize);container.addEventListener('pointerdown',down);window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);container.addEventListener('touchstart',e=>{if(playing&&e.cancelable)e.preventDefault()},{passive:false});container.addEventListener('touchmove',e=>{if(playing&&e.cancelable)e.preventDefault()},{passive:false});document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){playing=false;showEnd(false,'Paused','Your adventure is waiting. Tap to resume.',true)}});requestAnimationFrame(frame)}
+function resize(){const w=innerWidth,h=innerHeight,aspect=w/h;const height=w>700?18:22,width=height*aspect;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();renderer.setSize(w,h)}
+const WORLDS=[
+['Tokyo','Japan','neon'],['Delhi','India','market'],['Shanghai','China','skyline'],['Dhaka','Bangladesh','market'],['São Paulo','Brazil','tropical'],['Cairo','Egypt','desert'],['Mexico City','Mexico','fiesta'],['Beijing','China','skyline'],['Mumbai','India','market'],['Osaka','Japan','neon'],['New York','USA','skyline'],['Karachi','Pakistan','market'],['Chongqing','China','skyline'],['Istanbul','Türkiye','harbor'],['Buenos Aires','Argentina','fiesta'],['Lagos','Nigeria','tropical'],['Manila','Philippines','tropical'],['Kolkata','India','market'],['Kinshasa','DR Congo','tropical'],['Guangzhou','China','skyline'],['Paris','France','europe'],['London','UK','europe'],['Dubai','UAE','desert'],['Singapore','Singapore','tropical'],['Seoul','South Korea','neon'],['Valencia','Spain','harbor'],['Kyoto Village','Japan','village'],['Alpine Village','Switzerland','village'],['Tuscan Village','Italy','village'],['Carpathian Village','Ukraine','village'],['Provence Village','France','village'],['Andean Village','Peru','village'],['Dutch Countryside','Netherlands','village'],['English Farm','UK','village'],['Bavarian Village','Germany','village'],['Greek Island Village','Greece','village']];
+let worldIndex=-1,world=WORLDS[0],actors=[],landmark3d=null,landmarkRequest=0,tokyoMixer=null;
+async function loadDetailedTokyo(){
+const token=++landmarkRequest;
+try{
+const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
+const loader=new GLTFLoader();
+const gltf=await loader.loadAsync('https://threejs.org/examples/models/gltf/LittlestTokyo.glb');
+if(token!==landmarkRequest||world[0]!=='Tokyo')return;
+const model=gltf.scene;const bounds=new THREE.Box3().setFromObject(model);const size=bounds.getSize(new THREE.Vector3());const center=bounds.getCenter(new THREE.Vector3());
+const factor=11/Math.max(size.x,size.y,size.z);model.scale.setScalar(factor);model.position.set(-17-center.x*factor,-center.y*factor+0.15,-18-center.z*factor);model.rotation.y=-.3;
+model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=true}});
+scene.add(model);landmark3d=model;if(gltf.animations?.length){tokyoMixer=new THREE.AnimationMixer(model);for(const clip of gltf.animations)tokyoMixer.clipAction(clip).play()}
+$('notice').textContent='🏙️ TOKYO 3D LANDMARK LOADED';$('notice').classList.add('show');setTimeout(()=>$('notice').classList.remove('show'),1800);
+}catch(e){console.warn('Optional Tokyo 3D model unavailable, keeping playable city',e)}
+}
+
+function nextWorld(){let n=0;try{n=Number(localStorage.getItem('mindora-hole-world-rotation')||'0')||0;localStorage.setItem('mindora-hole-world-rotation',String(n+1))}catch{n=Math.floor(Math.random()*WORLDS.length)}worldIndex=n%WORLDS.length;world=WORLDS[worldIndex];if(new URLSearchParams(location.search).get('showcase')==='tokyo'){worldIndex=0;world=WORLDS[0]}}
+function buildWorld(){
+if(landmark3d){scene.remove(landmark3d);landmark3d=null}tokyoMixer=null;landmarkRequest++;
+nextWorld();actors=[];
+for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
+items=[];decor=[];particles=[];ground.material=world[2]==='desert'?mats.yellow:world[2]==='village'?mats.grass:level%2?mats.grass:mats.grass2;
+const palette=[mats.pink,mats.orange,mats.yellow,mats.purple,mats.blue,mats.mint];
+const asphalt=color(world[2]==='village'?'#bfa87e':'#535e69'),pavement=color('#d9d2c3'),line=color('#fffae0'),glass=color('#bdefff'),roof=color('#f8798b'),door=color('#4a547e'),leaf=color('#51c985'),darkRoof=color('#665cc7');
+function B(parent,x,y,z,w,h,d,mat){return makeBox(x,y,z,w,h,d,mat,parent)}
+function C(parent,x,y,z,r,h,mat){const o=mesh(cylGeo,mat,parent);o.position.set(x,y,z);o.scale.set(r,h,r);return o}
+function S(parent,x,y,z,r,mat){return ball(x,y,z,r,mat,parent)}
+function group(x,z){const g=new THREE.Group();scene.add(g);g.position.set(x,.05,z);return g}
+function addDecor(g){decor.push(g);return g}
+function addItem(g,size){g.userData={group:true,size,collected:false,fall:0};items.push(g);return g}
+function building(x,z,idx){const g=group(x,z),w=1.7+(idx%3)*.36,h=2.1+(idx%5)*.68,d=1.8;const wall=palette[idx%palette.length];B(g,0,h/2,0,w,h,d,wall);B(g,0,h+.13,0,w+.23,.28,d+.23,idx%2?roof:darkRoof);B(g,0,.7,d/2+.025,.48,1.1,.08,door);
+for(let row=0;row<Math.min(4,Math.floor(h));row++)for(let col=-1;col<=1;col+=2){B(g,col*w*.26,1.45+row*.72,d/2+.07,.35,.39,.09,glass);B(g,col*w*.26,1.45+row*.72,d/2+.13,.09,.39,.06,mats.white)}
+if(idx%4===0){const chimney=B(g,w*.27,h+.57,-.25,.32,.9,.35,mats.white);B(g,w*.27,h+1.04,-.25,.45,.12,.46,roof)}
+if(idx%5===0){B(g,0,h+.65,0,.12,.95,.12,mats.wood);S(g,0,h+1.2,0,.25,mats.yellow)}
+return addDecor(g)}
+function house(x,z,i){const g=group(x,z),wall=palette[i%6];B(g,0,.8,0,2,1.6,1.8,wall);const r=mesh(new THREE.ConeGeometry(1.55,1.35,4),i%2?roof:darkRoof,g);r.position.y=2.35;r.rotation.y=Math.PI/4;B(g,0,.55,.95,.48,.9,.09,door);for(const k of [-.65,.65]){B(g,k,1.18,.95,.43,.5,.1,glass);B(g,k,1.18,1.01,.07,.5,.06,mats.white)}
+B(g,-.85,.25,1.1,.65,.3,.42,mats.wood);S(g,-.85,.55,1.1,.25,mats.pink);return addDecor(g)}
+function tree(x,z,i){const g=group(x,z);C(g,0,.63,0,.19,1.25,mats.wood);for(let k=0;k<3;k++)S(g,(k-1)*.36,1.55+(k%2)*.4,0,.64,i%3===0?mats.pink:leaf);return addDecor(g)}
+// Detailed Japanese kei cars and delivery vans: layered body, windows,
+// rubber tyres, chrome rims, lights, licence plates and side mirrors.
+const carPaint=['#e6e4d9','#bb5050','#4c7e91','#d4b46a','#748a77','#696d7b'].map(h=>color(h));
+const tyreMat=color('#24272c'),chromeMat=color('#c4ccd0'),windowMat=color('#526e7c'),lampMat=color('#f7dfb0'),rearMat=color('#b74a46');
+function car(x,z,i){
+const g=group(x,z),paint=carPaint[i%carPaint.length],van=i%4===0;
+const length=van?1.85:1.5,bodyH=van?.65:.48;
+B(g,0,.39,0,length,bodyH,.92,paint);
+B(g,van?-.06:-.12,van?.91:.78,0,van?1.22:.84,van?.76:.45,.85,paint);
+B(g,van?-.06:-.13,van?1.02:.88,.437,van?.99:.7,van?.49:.3,.025,windowMat);
+B(g,van?-.06:-.13,van?1.02:.88,-.437,van?.99:.7,van?.49:.3,.025,windowMat);
+B(g,van?-.64:-.49,van?1.01:.89,0,.04,van?.48:.29,.7,windowMat);
+B(g,van?.55:.38,van?1.01:.89,0,.04,van?.48:.29,.7,windowMat);
+for(const xx of [-length*.32,length*.32])for(const zz of [-.48,.48]){
+const wheel=mesh(new THREE.CylinderGeometry(.235,.235,.12,16),tyreMat,g);
+wheel.rotation.x=Math.PI/2;wheel.position.set(xx,.235,zz);
+const hub=mesh(new THREE.CylinderGeometry(.105,.105,.125,12),chromeMat,g);
+hub.rotation.x=Math.PI/2;hub.position.set(xx,.235,zz)
+}
+for(const zz of [-.3,.3]){
+B(g,length/2+.025,.42,zz,.055,.15,.19,lampMat);
+B(g,-length/2-.025,.42,zz,.055,.14,.2,rearMat)
+}
+B(g,length/2+.032,.28,0,.035,.13,.32,chromeMat);
+B(g,-length/2-.032,.28,0,.035,.13,.32,chromeMat);
+for(const zz of [-.5,.5])B(g,.31,.8,zz,.18,.11,.07,paint);
+if(van){B(g,0,1.32,0,.75,.09,.73,chromeMat);B(g,-.4,.68,.48,.52,.045,.035,chromeMat)}
+g.rotation.y=i%2?Math.PI/2:0;
+return addItem(g,1.35)
+}
+function treasure(x,z,i){const g=group(x,z),type=i%6,c=palette[i%6];if(type===0){C(g,0,.32,0,.3,.64,c);S(g,0,.76,0,.28,mats.white);S(g,0,1.02,0,.15,mats.pink)}
+else if(type===1){B(g,0,.4,0,.65,.8,.65,c);B(g,0,.83,0,.74,.12,.74,mats.white);B(g,0,.43,.35,.2,.3,.08,mats.yellow)}
+else if(type===2){S(g,0,.4,0,.42,c);S(g,.16,.68,0,.15,mats.mint);C(g,0,.13,0,.18,.14,mats.wood)}
+else if(type===3){B(g,0,.19,0,.85,.25,.6,mats.wood);for(let k=0;k<3;k++)S(g,(k-1)*.25,.47,0,.19,palette[(i+k)%6])}
+else if(type===4){C(g,0,.32,0,.33,.64,c);const top=mesh(new THREE.ConeGeometry(.48,.55,7),mats.yellow,g);top.position.y=.89}
+else{B(g,0,.3,0,.8,.6,.65,c);B(g,0,.64,0,.84,.1,.7,mats.white);B(g,0,.31,.36,.26,.28,.08,glass)}
+return addItem(g,.5)}
+// Detailed diorama props inspired by playful miniature city and countryside references.
+const stone=color('#f1e6d0'),brick=color('#e99b80'),hedge=color('#68b65b'),soil=color('#95644a'),waterBlue=color('#66c9ee'),pinkBloom=color('#ff9ac8'),goldTrim=color('#ffe5a0');
+function streetLamp(x,z){const g=group(x,z);C(g,0,1.25,0,.075,2.5,mats.dark);S(g,0,2.56,0,.25,mats.yellow);C(g,0,2.76,0,.31,.08,mats.blue);addDecor(g)}
+function flowerTree(x,z,i){const g=group(x,z);C(g,0,.9,0,.23,1.8,mats.wood);for(let k=0;k<7;k++){const t=k*2.4;S(g,Math.sin(t)*.69,2.05+(k%3)*.28,Math.cos(t)*.55,.59,i%2?pinkBloom:hedge)}addDecor(g)}
+function park(x,z,i){const g=group(x,z);B(g,0,.07,0,4.6,.15,4.3,mats.grass2);for(const xx of [-1.85,1.85])for(const zz of [-1.65,1.65]){C(g,xx,.55,zz,.13,1.1,mats.wood);S(g,xx,1.34,zz,.64,i%2?pinkBloom:hedge)}B(g,0,.29,0,2.1,.13,.65,mats.wood);for(const xx of [-.75,.75])B(g,xx,.14,0,.12,.25,.55,mats.dark);S(g,1.15,.22,1.1,.2,mats.yellow);addDecor(g)}
+function farmPlot(x,z,i){const g=group(x,z);B(g,0,.06,0,3.5,.15,3.1,soil);for(let row=0;row<4;row++){B(g,-1.15+row*.75,.18,0,.43,.18,2.65,brick);for(let col=0;col<5;col++){const zz=-1.1+col*.55;S(g,-1.15+row*.75,.35,zz,.18,(row+col+i)%3===0?mats.orange:hedge)}}for(let k=0;k<5;k++){C(g,-1.85,.3,-1.45+k*.72,.07,.6,mats.wood);C(g,1.85,.3,-1.45+k*.72,.07,.6,mats.wood)}addDecor(g)}
+function marketStall(x,z,i){const g=group(x,z);for(const xx of [-1,1])for(const zz of [-.6,.6])C(g,xx,.83,zz,.075,1.65,mats.wood);B(g,0,1.75,0,2.45,.22,1.8,i%2?mats.pink:mats.yellow);for(let k=0;k<5;k++)B(g,-.94+k*.47,1.59,.87,.23,.22,.12,k%2?mats.white:mats.blue);B(g,0,.72,0,2.1,.18,1.2,mats.wood);for(let k=0;k<8;k++)S(g,-.78+(k%4)*.51,.92,-.28+Math.floor(k/4)*.52,.21,palette[(i+k)%6]);addDecor(g)}
+function clockTower(x,z){const g=group(x,z);B(g,0,2,0,2.2,4,2.2,stone);B(g,0,4.18,0,2.55,.36,2.55,brick);const cap=mesh(new THREE.ConeGeometry(1.85,1.6,4),darkRoof,g);cap.rotation.y=Math.PI/4;cap.position.y=5.08;for(const side of [-1,1]){const face=mesh(new THREE.CylinderGeometry(.57,.57,.06,20),mats.white,g);face.rotation.x=Math.PI/2;face.position.set(0,3.35,side*1.15);B(g,0,3.35,side*1.2,.055,.72,.04,mats.dark);B(g,.16,3.35,side*1.22,.33,.05,.04,mats.dark)}addDecor(g)}
+function bridgePond(x,z){const g=group(x,z);const pond=mesh(new THREE.CylinderGeometry(2.3,2.3,.1,28),waterBlue,g);pond.position.y=.11;pond.scale.z=.7;for(let k=0;k<12;k++){const t=k*Math.PI/6;S(g,Math.cos(t)*2.3,.18,Math.sin(t)*1.6,.28,stone)}B(g,0,.42,0,4.1,.23,.85,mats.wood);for(const xx of [-1.7,-.85,0,.85,1.7]){C(g,xx,.8,-.48,.07,.8,mats.wood);C(g,xx,.8,.48,.07,.8,mats.wood)}addDecor(g)}
+// Place thematic details away from the initial player position.
+const villageWorld=world[2]==='village';
+for(let i=0;i<34;i++){const x=(Math.random()-.5)*(W-10),z=(Math.random()-.5)*(D-12);if(Math.hypot(x,z-11)<9)continue;if(villageWorld){if(i%4===0)farmPlot(x,z,i);else if(i%4===1)flowerTree(x,z,i);else if(i%4===2)park(x,z,i);else marketStall(x,z,i)}else{if(i%5===0)park(x,z,i);else if(i%5===1)marketStall(x,z,i);else if(i%5===2)flowerTree(x,z,i);else streetLamp(x,z)}}
+if(villageWorld)bridgePond(-14,-20);else if(world[0]!=='Tokyo')clockTower(-14,-20);
+// Keep the heavy external GLB out of the critical rendering path: the textured
+// Tokyo neighborhood is immediately playable without a large network download.
+// Tokyo art-direction pass: individually dressed facades, layered architecture, shopfronts,
+// Japanese signboards, illuminated windows, crossings, street furniture and sakura.
+// Hand-painted facade atlas: textured masonry, shop awnings, signage and glowing windows.
+// Cached by building variant to avoid expensive per-building canvas allocations.
+const facadeMaterials=new Map();
+function facadeTexture(i){
+const variant=i%8;if(facadeMaterials.has(variant))return facadeMaterials.get(variant);
+const canvas=document.createElement('canvas');canvas.width=256;canvas.height=512;
+const c=canvas.getContext('2d'),base=['#d7c3b1','#b9c8c5','#d5c6b8','#b9b9c7','#b6c5b0','#d3b4a7','#aebfc8','#cbbcae'][variant];
+c.fillStyle=base;c.fillRect(0,0,256,512);
+for(let y=0;y<512;y+=17){c.fillStyle='rgba(56,51,63,.09)';c.fillRect(0,y,256,2);
+for(let x=(Math.floor(y/17)%2)*24;x<256;x+=48)c.fillRect(x,y,2,17)}
+c.fillStyle='#343f50';c.fillRect(10,10,236,17);c.fillRect(10,490,236,14);
+for(let floor=0;floor<5;floor++)for(let col=0;col<2;col++){
+const x=26+col*119,y=37+floor*76;
+c.fillStyle='#f2eee4';c.fillRect(x-6,y-5,98,65);
+c.fillStyle=floor%2?'#38576b':'#4a6676';c.fillRect(x,y,86,54);
+const glow=c.createLinearGradient(x,y,x+86,y+54);glow.addColorStop(0,'#9db5bf');glow.addColorStop(1,(floor+col+variant)%3?'#d3d9c9':'#f8cf8c');
+c.fillStyle=glow;c.fillRect(x+4,y+4,78,46);
+c.fillStyle='#4c5a67';c.fillRect(x+41,y,5,54);c.fillRect(x,y+25,86,4);
+c.fillStyle='rgba(255,255,255,.28)';c.fillRect(x+8,y+6,7,36);
+c.fillStyle='#69767d';c.fillRect(x-8,y+55,102,8);
+}
+c.fillStyle='#59616a';c.fillRect(0,436,256,12);
+c.fillStyle=variant%2?'#8c3742':'#284e62';c.fillRect(0,449,256,63);
+for(let k=0;k<9;k++){c.fillStyle=k%2?'#fff0da':'#d24f54';c.fillRect(k*29,449,15,17)}
+c.fillStyle='#d2e5e3';c.fillRect(20,475,215,37);c.fillStyle='#455c6d';c.fillRect(118,475,8,37);
+const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=2;
+const mat=new THREE.MeshStandardMaterial({map:tex,roughness:.85,metalness:0});
+facadeMaterials.set(variant,mat);return mat
+}
+// Modular, reusable Tokyo 3D building kits: pitched roofs, side-window bays,
+// balconies, air-conditioning, shop awnings, pipework and rooftop equipment.
+// Each kit is constructed from actual 3D meshes, not a flat facade image.
+const tokyoMat={
+roof:color('#4b555e'),tile:color('#66717a'),frame:color('#53636c'),
+rail:color('#c4c8c3'),ac:color('#e0e1d8'),vent:color('#71818a'),
+wood:color('#886959'),cream:color('#eee3d2'),glass:color('#80b0b9'),
+red:color('#b94e53'),blue:color('#42758a'),green:color('#66836f')
+};
+const tokyoSignCache=new Map();
+function cachedTokyoSign(word,bg){
+const key=word+bg;if(!tokyoSignCache.has(key))tokyoSignCache.set(key,makeSign(word,bg));
+return tokyoSignCache.get(key)
+}
+function tokyoFacade(x,z,i){
+const g=group(x,z),height=4.2+(i%5)*.8,w=2.65+(i%3)*.32,depth=2.65;
+const wall=facadeTexture(i),roof=tokyoMat.roof,frame=tokyoMat.frame;
+B(g,0,height/2,0,w,height,depth,wall);
+B(g,0,.19,depth/2+.2,w+.3,.38,.7,tokyoMat.cream);
+// Shop entrance: recessed-looking double glass doors, awning, noren panels.
+B(g,0,.69,depth/2+.09,w*.73,1.15,.09,tokyoMat.glass);
+B(g,0,.69,depth/2+.15,.085,1.15,.1,frame);
+for(const side of [-1,1]){
+B(g,side*w*.37,.68,depth/2+.14,.12,1.26,.15,frame);
+B(g,side*w*.32,1.08,depth/2+.18,.16,.07,.1,tokyoMat.rail)
+}
+B(g,0,1.39,depth/2+.39,w+.34,.13,.84,i%3===0?tokyoMat.red:i%3===1?tokyoMat.blue:tokyoMat.green);
+for(let k=0;k<7;k++)B(g,-w*.42+k*w*.14,1.19,depth/2+.72,w*.105,.35,.045,k%2?tokyoMat.cream:tokyoMat.red);
+// More dimensional shop fronts in the isolated art preview.
+if(i%2===0){for(const side of [-1,1])B(g,side*w*.39,1.48,depth/2+.62,.09,.76,.1,tokyoMat.wood);for(let k=0;k<5;k++)B(g,-w*.32+k*w*.16,1.78,depth/2+.66,.035,.24,.035,tokyoMat.cream)}
+if(i%3===2){B(g,-w*.42,.42,depth/2+.59,.3,.44,.31,tokyoMat.wood);B(g,-w*.42,.71,depth/2+.59,.38,.1,.36,tokyoMat.green);B(g,w*.44,.37,depth/2+.62,.27,.34,.27,tokyoMat.wood)}
+// Every storey has physical window frames and exterior sills.
+for(let floor=0;floor<Math.floor((height-1.5)/.9);floor++){
+const y=2.03+floor*.88;
+for(const side of [-1,1]){
+const xx=side*w*.245;
+B(g,xx,y,depth/2+.065,.62,.57,.09,tokyoMat.glass);
+B(g,xx,y,depth/2+.12,.055,.62,.08,frame);
+B(g,xx,y+.3,depth/2+.12,.73,.075,.13,frame);
+B(g,xx,y-.3,depth/2+.15,.76,.095,.19,tokyoMat.cream);
+}
+// Side facade has windows visible from the camera's oblique view.
+B(g,w/2+.06,y,0,.08,.55,.78,tokyoMat.glass);
+B(g,w/2+.11,y,0,.09,.58,.055,frame);
+if(floor%2===0){
+const balconyY=y-.39;
+B(g,0,balconyY,depth/2+.35,w*.86,.1,.74,tokyoMat.cream);
+B(g,0,balconyY+.43,depth/2+.71,w*.86,.07,.07,tokyoMat.rail);
+for(let k=0;k<5;k++)B(g,-w*.35+k*w*.175,balconyY+.22,depth/2+.71,.055,.45,.065,frame);
+B(g,w*.35,balconyY+.15,depth/2+.49,.44,.32,.32,tokyoMat.ac);
+B(g,w*.35,balconyY+.16,depth/2+.665,.27,.21,.025,tokyoMat.vent);
+}
+}
+// Three distinct roof silhouettes: Japanese tiled pitch, flat urban and stepped.
+if(i%3===0){
+B(g,0,height+.04,0,w+.38,.18,depth+.38,roof);
+for(const side of [-1,1]){
+const panel=B(g,side*w*.245,height+.48,0,w*.57,.09,depth+.5,tokyoMat.tile);
+panel.rotation.z=side*.37;
+for(let k=0;k<4;k++){
+const ridge=B(g,side*w*.25,height+.51,-depth*.37+k*depth*.24,w*.54,.035,.045,roof);
+ridge.rotation.z=side*.37
+}
+}
+B(g,0,height+.83,0,.13,.12,depth+.6,roof)
+}else if(i%3===1){
+B(g,0,height+.12,0,w+.28,.23,depth+.3,roof);
+for(const xx of [-w*.39,w*.39])B(g,xx,height+.43,0,.12,.48,depth+.3,tokyoMat.cream);
+for(const zz of [-depth*.4,depth*.4])B(g,0,height+.43,zz,w+.25,.48,.12,tokyoMat.cream);
+B(g,-w*.24,height+.47,-.25,.68,.43,.58,tokyoMat.ac);
+B(g,w*.25,height+.52,.24,.45,.54,.45,tokyoMat.vent)
+}else{
+B(g,0,height+.11,0,w+.24,.2,depth+.25,roof);
+B(g,-w*.23,height+.53,-.15,w*.52,.65,depth*.63,tokyoMat.cream);
+B(g,-w*.23,height+.91,-.15,w*.57,.11,depth*.67,roof);
+B(g,w*.3,height+.42,.32,.46,.42,.48,tokyoMat.vent)
+}
+// External service pipe with bends, rooftop antenna and wall-mounted sign.
+B(g,w/2+.085,height*.5,-depth*.26,.09,height*.85,.09,tokyoMat.vent);
+B(g,w/2+.09,height*.91,-depth*.14,.09,.09,.34,tokyoMat.vent);
+if(i%4===0){
+B(g,w*.31,height+1.1,-.22,.045,1.3,.045,frame);
+B(g,w*.31,height+1.59,-.22,.55,.045,.045,frame)
+}
+const labels=['ラーメン','喫茶店','東京','寿司','カフェ','花屋','本屋','焼鳥'];
+const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.45,.48),cachedTokyoSign(labels[i%8],i%3===0?'#b93e4d':i%3===1?'#284b70':'#47736a'));
+sign.position.set(0,1.84,depth/2+.23);g.add(sign);
+if(i%3===0){
+const panel=new THREE.Mesh(new THREE.PlaneGeometry(.51,1.85),cachedTokyoSign('東京','#d45159'));
+panel.position.set(w/2+.15,height*.65,depth/2+.22);g.add(panel)
+}
+addDecor(g)
+}
+function makeSign(word,bg){
+const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,256,128);ctx.strokeStyle='#ffffff';ctx.lineWidth=8;ctx.strokeRect(8,8,240,112);ctx.fillStyle='#fff';ctx.font='bold 47px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(word,128,64);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return new THREE.MeshBasicMaterial({map:t,side:THREE.DoubleSide})}
+// Layered sakura crowns, forked branches and irregular blossom clusters.
+const sakuraPetals=['#f6c3d5','#ffe0e5','#eeb3cd','#f8d8d7'].map(h=>color(h));
+function sakura(x,z,i){
+const g=group(x,z),branch=color('#7d6258');
+C(g,0,.93,0,.16,1.85,branch);
+for(let k=0;k<5;k++){
+const a=k*2.399,r=.55+(k%2)*.15;
+const bx=Math.cos(a)*r,bz=Math.sin(a)*r;
+const stem=C(g,bx*.52,1.87,bz*.52,.075,.85,branch);
+stem.rotation.z=-Math.cos(a)*.55;stem.rotation.x=Math.sin(a)*.5;
+for(let j=0;j<3;j++){
+const theta=j*2.1+k;
+const blossom=mesh(new THREE.IcosahedronGeometry(.45+(j%2)*.1,1),sakuraPetals[(i+k+j)%4],g);
+blossom.position.set(bx+Math.cos(theta)*.33,2.35+(j%2)*.28,bz+Math.sin(theta)*.31);
+blossom.scale.set(1.12,.75,1.02)
+}
+}
+addDecor(g)
+}
+function crossing(x,z){const g=group(x,z);for(let j=0;j<6;j++)B(g,-1.5+j*.6,.092,0,.34,.025,2.8,mats.white);addDecor(g)}
+// Tokyo street-level details: red torii gates, glowing lanterns and vending machines.
+const vermilion=color('#e84c45'),lanternGlow=color('#ffe1a0'),vendingBlue=color('#2b8ac6');
+function toriiGate(x,z){const g=group(x,z);for(const xx of [-1.05,1.05])C(g,xx,1.45,0,.15,2.9,vermilion);B(g,0,2.85,0,2.95,.3,.35,vermilion);B(g,0,2.45,0,2.6,.18,.25,mats.dark);B(g,0,3.08,0,3.15,.1,.42,mats.dark);addDecor(g)}
+function vendingMachine(x,z,i){const g=group(x,z);B(g,0,1,0,1.15,2,.82,i%2?vendingBlue:vermilion);B(g,0,1.26,.43,.88,1.05,.06,mats.white);for(let row=0;row<3;row++)for(let col=0;col<4;col++)S(g,-.3+col*.2,1.62-row*.3,.48,.07,palette[(row+col+i)%6]);B(g,.31,.54,.46,.16,.24,.04,mats.dark);B(g,0,.23,.46,.65,.13,.04,mats.dark);addDecor(g)}
+function lanternStreet(x,z){const g=group(x,z);C(g,0,1.35,0,.075,2.7,mats.dark);B(g,.42,2.53,0,.84,.075,.075,mats.dark);for(const dx of [.18,.68]){const l=mesh(new THREE.CylinderGeometry(.2,.2,.42,10),lanternGlow,g);l.position.set(dx,2.18,0);C(g,dx,2.44,0,.21,.05,vermilion);C(g,dx,1.93,0,.21,.05,vermilion)}addDecor(g)}
+// A handcrafted-feeling toy city: intersecting roads, blocks, sidewalks and themed districts.
+for(let x=-25;x<=25;x+=10){const g=group(x,0);B(g,0,.025,0,3.4,.07,D-3,asphalt);for(let z=-42;z<43;z+=4)B(g,0,.067,z,.11,.02,1.5,line);addDecor(g)}
+for(let z=-36;z<=36;z+=12){const g=group(0,z);B(g,0,.027,0,W-3,.07,3.1,asphalt);for(let x=-29;x<30;x+=4)B(g,x,.067,0,1.45,.02,.1,line);addDecor(g)}
+let seed=0;
+for(let x=-29;x<=29;x+=5.1)for(let z=-42;z<=42;z+=5.3){if(Math.hypot(x,z-11)<6)continue;const onRoad=Math.abs(((x+25+5)%10)-5)<2.8||Math.abs(((z+36+6)%12)-6)<2.5;if(onRoad)continue;const idx=seed++;const px=x+(Math.random()-.5)*.65,pz=z+(Math.random()-.5)*.65;
+if(world[2]==='village'){if(idx%3===0)house(px,pz,idx);else if(idx%4===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else if(idx%5===0)house(px,pz,idx);else tree(px,pz,idx)}else if(world[0]==='Tokyo'){if(idx%8===0)sakura(px,pz,idx);else tokyoFacade(px,pz,idx)}else if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else building(px,pz,idx)}
+if(world[0]==='Tokyo'){for(let j=0;j<30;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}}
+for(let i=0;i<110;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<3.5)continue;if(i%3===0)car(x,z,i);else treasure(x,z,i)}
+for(let i=0;i<40;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<5)continue;const g=group(x,z);C(g,0,.2,0,.06,.4,mats.mint);for(let k=0;k<5;k++)S(g,Math.cos(k*1.257)*.17,.45,Math.sin(k*1.257)*.17,.12,palette[(i+k)%6]);S(g,0,.45,0,.1,mats.yellow);addDecor(g)}
+
+// Theme-specific landmarks, farm animals and animated village residents.
+const theme=world[2],vill=theme==='village';
+const skin=color('#ffcfaa'),coat=color('#a7dcf2'),pants=color('#456b98'),animalBrown=color('#bf8655'),animalCream=color('#fff3d7'),animalBlack=color('#383b50');
+function person(x,z,i){const g=group(x,z),activity=i%4;C(g,0,.85,0,.22,.9,i%2?mats.purple:coat);S(g,0,1.48,0,.31,skin);C(g,-.13,.29,0,.11,.5,pants);C(g,.13,.29,0,.11,.5,pants);S(g,0,1.8,0,.31,i%2?mats.white:animalBrown);
+if(activity===0){B(g,.55,.37,0,.75,.2,.3,mats.wood);C(g,.45,.65,0,.06,.55,mats.wood)}
+else if(activity===1){B(g,.55,.42,0,1.5,.17,.45,mats.wood);C(g,.07,.2,0,.09,.35,mats.wood);C(g,1,.2,0,.09,.35,mats.wood)}
+else if(activity===2){B(g,.7,.3,0,.55,.38,.45,mats.wood);for(let k=0;k<3;k++)S(g,.5+k*.15,.64,0,.12,mats.orange)}
+else{C(g,.42,.65,0,.05,.85,mats.wood);B(g,.42,.95,0,.46,.12,.24,mats.dark)}
+g.userData.bob=i%3;actors.push(g);return addDecor(g)}
+function animal(x,z,i){const g=group(x,z),mat=i%3===0?animalCream:i%3===1?animalBrown:animalBlack;const body=mesh(sphereGeo,mat,g);body.position.set(0,.45,0);body.scale.set(.62,.43,.35);S(g,.53,.6,0,.29,mat);for(const zz of [-.22,.22])for(const xx of [-.36,.35])C(g,xx,.19,zz,.095,.37,mat);for(const zz of [-.22,.22]){const ear=mesh(new THREE.ConeGeometry(.15,.3,5),mat,g);ear.position.set(.55,.94,zz)}S(g,.75,.57,.13,.055,mats.dark);S(g,.75,.57,-.13,.055,mats.dark);actors.push(g);return addDecor(g)}
+function landmark(x,z,i){const g=group(x,z);if(theme==='skyline'||theme==='neon'){const h=5+i%5;B(g,0,h/2,0,2.5,h,2.5,i%2?mats.blue:mats.purple);for(let k=1;k<h;k++)B(g,0,k+.15,1.29,1.7,.16,.07,mats.white);if(theme==='neon')for(let k=0;k<3;k++)B(g,0,h*.3+k*.65,1.38,1.5,.16,.07,mats.pink)}
+else if(theme==='desert'){B(g,0,1.1,0,3.2,2.2,2.8,mats.white);for(let k=0;k<3;k++){const dome=mesh(new THREE.SphereGeometry(.57,12,8,0,Math.PI*2,0,Math.PI/2),mats.yellow,g);dome.position.set((k-1)*.9,2.25,0)}}
+else if(theme==='europe'||theme==='harbor'){B(g,0,1.8,0,2.6,3.6,2.5,mats.white);const roofObj=mesh(new THREE.ConeGeometry(2,1.9,4),roof,g);roofObj.position.y=4.5;roofObj.rotation.y=Math.PI/4;B(g,0,2.7,1.3,.8,.8,.1,glass)}
+else if(theme==='market'||theme==='fiesta'){B(g,0,.8,0,2.8,1.6,2,mats.orange);B(g,0,1.7,0,3.2,.3,2.4,mats.pink);for(let k=0;k<4;k++)S(g,(k-1.5)*.6,1.95,1,.22,palette[k])}
+else{C(g,0,1.4,0,.34,2.8,mats.wood);for(let k=0;k<4;k++)S(g,Math.cos(k*1.57)*.75,2.9,Math.sin(k*1.57)*.75,.9,mats.mint)}return addDecor(g)}
+for(let i=0;i<12;i++){const x=(Math.random()-.5)*(W-8),z=(Math.random()-.5)*(D-9);if(Math.hypot(x,z-11)<7)continue;if(vill){if(i%3===0)person(x,z,i);else animal(x,z,i)}else if(i%4===0)person(x,z,i);else if(i%3===0)landmark(x,z,i)}
+for(let i=0;i<(vill?14:7);i++){const x=(Math.random()-.5)*(W-6),z=(Math.random()-.5)*(D-6);if(Math.hypot(x,z-11)<6)continue;if(vill)animal(x,z,i);else landmark(x,z,i)}
+$('level').textContent='🌍 '+world[0].toUpperCase()+' · '+world[1].toUpperCase();
+portal.position.set(0,.04,11);if(!steerTarget)steerTarget=new THREE.Vector2(0,11);else steerTarget.set(0,11);radius=1.15;portal.scale.setScalar(radius);score=0;remaining=time;elapsed=0;updateHud()
+}
+// Stable screen-space steering. Finger deltas never depend on the moving follow camera.
+// Continuous virtual thumbstick: movement persists while finger is held still.
+// Releasing the finger stops motion. No repeated swipes required.
+let stickOrigin=null,stickDirection=new THREE.Vector2(),stickSmoothed=new THREE.Vector2();
+const heldKeys=new Set();
+window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'].includes(e.code)){heldKeys.add(e.code);e.preventDefault()}});
+window.addEventListener('keyup',e=>heldKeys.delete(e.code));
+window.addEventListener('blur',()=>heldKeys.clear());
+function down(e){
+if(!playing||dragging)return;
+dragging=true;activePointer=e.pointerId;
+stickOrigin={x:e.clientX,y:e.clientY};
+stickDirection.set(0,0);stickSmoothed.set(0,0);
+try{container.setPointerCapture(e.pointerId)}catch{}
+if(e.cancelable)e.preventDefault()
+}
+function move(e){
+if(!playing||!dragging||e.pointerId!==activePointer||!stickOrigin)return;
+const dx=e.clientX-stickOrigin.x,dy=e.clientY-stickOrigin.y;
+const length=Math.hypot(dx,dy),deadzone=4,full=52;
+const normalized=Math.min(1,Math.max(0,(length-deadzone)/((matchMedia('(pointer:fine)').matches?110:52)-deadzone)));
+const strength=Math.pow(normalized,.82);
+if(length>0){stickDirection.set(dx/length*strength,dy/length*strength)}
+else stickDirection.set(0,0);
+if(e.cancelable)e.preventDefault()
+}
+function up(e){
+if(e&&activePointer!==null&&e.pointerId!==activePointer)return;
+dragging=false;activePointer=null;stickOrigin=null;
+stickDirection.set(0,0);stickSmoothed.set(0,0)
+}
+function beep(f=420){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.type='sine';o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*1.4,t+.1);g.gain.setValueAtTime(.045,t);g.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.17)}catch{}}
+function announce(s){$('notice').textContent=s;$('notice').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').classList.remove('show'),1000)}
+function updateHud(){$('time').textContent=Math.max(0,Math.ceil(remaining));$('score').textContent=score+' / '+goal;$('size').textContent='LV '+Math.min(5,1+Math.floor(score/8));$('fill').style.width=Math.min(100,score/goal*100)+'%';$('level').textContent='🌍 '+world[0].toUpperCase()+' · '+world[1].toUpperCase()+' · LEVEL '+level}
+function collect(o){
+o.userData.collected=true;o.userData.fall=0;
+o.userData.startX=o.position.x;o.userData.startZ=o.position.z;
+o.userData.startY=o.position.y;
+o.userData.baseScale=o.scale.clone();
+window.holeBurst?.(o.position.x,o.position.z,o.userData.size);
+}
+function finishCollect(o){
+if(o.userData.scored)return;
+o.userData.scored=true;score++;
+beep(420+Math.min(score,30)*12);
+if(score===12||score===28||score===48||score===65){radius+=.36;announce(score===28?'🚗 CARS UNLOCKED!':'PORTAL GROWS! ✨');beep(780)}
+updateHud();
+if(score>=goal){playing=false;showEnd(true,'LEVEL COMPLETE!','Amazing! You swallowed '+score+' objects. Ready for the next city?')}
+}
+function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000||.016);last=now;if(playing){// React immediately to direction reversals; smooth only minor thumb jitter.
+const dot=stickSmoothed.dot(stickDirection);
+const reversal=dot<-.045;
+const steering=1-Math.exp(-dt*(reversal?52:32));
+const keyboard=new THREE.Vector2(Number(heldKeys.has('ArrowRight')||heldKeys.has('KeyD'))-Number(heldKeys.has('ArrowLeft')||heldKeys.has('KeyA')),Number(heldKeys.has('ArrowDown')||heldKeys.has('KeyS'))-Number(heldKeys.has('ArrowUp')||heldKeys.has('KeyW')));
+if(keyboard.lengthSq()>0)keyboard.normalize();
+const direction=keyboard.lengthSq()>0?keyboard:stickDirection;
+stickSmoothed.lerp(direction,steering);
+if(direction.lengthSq()<.0001)stickSmoothed.set(0,0);
+if(dragging||keyboard.lengthSq()>0){
+const speed=matchMedia('(pointer:fine)').matches?11.8:13.4;
+portal.position.x=THREE.MathUtils.clamp(portal.position.x+stickSmoothed.x*speed*dt,-W/2+radius,W/2-radius);
+portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*dt,-D/2+radius,D/2-radius)
+}remaining-=dt;elapsed+=dt;if(remaining<=0){remaining=0;playing=false;showEnd(false,'TIME IS UP!','You collected '+score+' of '+goal+' treasures. Try again!')}updateHud()}
+if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.z+=dt*.6;
+for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math.pow(1-t,.72);const a=star.angle+now*.0028+t*7.5;star.mesh.position.set(Math.cos(a)*r,.227+Math.sin(t*Math.PI)*.015,Math.sin(a)*r);const scale=Math.max(.12,(1-t)*1.5);star.mesh.scale.setScalar(scale);star.mesh.material.opacity=Math.min(1,(1-t)*1.5)}
+ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);
+for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*9);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(23-camera.position.y)*follow;camera.position.z+=(portal.position.z+28-camera.position.z)*follow;camera.lookAt(camera.position.x,0,camera.position.z-28);// Hide distant detailed architecture, keeping a small visual margin around the camera.
+// Skip expensive per-mesh rendering for buildings outside the playable viewport.
+for(const d of decor){const dx=d.position.x-portal.position.x,dz=d.position.z-portal.position.z;d.visible=Math.abs(dx)<34&&Math.abs(dz)<36}
+for(const o of items){if(o.userData.collected){
+const u=o.userData;u.fall=Math.min(1,u.fall+dt*1.12);
+const t=u.fall,ease=t*t*(3-2*t);
+// First pull toward the hole, then tip and sink below the ground plane.
+o.position.x=u.startX+(portal.position.x-u.startX)*ease;
+o.position.z=u.startZ+(portal.position.z-u.startZ)*ease;
+o.position.y=u.startY-(.35+u.size*2.3)*ease;
+o.rotation.x+=dt*2.6;o.rotation.z+=dt*1.9;
+const shrink=Math.max(.005,1-Math.pow(Math.max(0,(t-.45)/.55),2)*.99);
+o.scale.copy(u.baseScale).multiplyScalar(shrink);
+if(t>=1){finishCollect(o);scene.remove(o)}
+continue}if(!playing)continue;const d=Math.hypot(o.position.x-portal.position.x,o.position.z-portal.position.z);if(d<radius*.84&&o.userData.size<radius*.8)collect(o)}
+renderer.render(scene,camera)}
+function showEnd(won,title,description,paused=false){$('overlay').classList.remove('hidden');$('face').textContent=won?'🏆🌈':paused?'⏸️🌀':'⏰🍭';$('heading').textContent=title;$('description').textContent=description;$('play').textContent=won?'NEXT LEVEL ▶':paused?'RESUME ▶':'TRY AGAIN ▶';if(!paused){track('game_complete',{score,level,success:won,duration_seconds:Math.round(elapsed)});if(won){try{const key='mindora-hole-world-v1',v=JSON.parse(localStorage.getItem(key)||'{}');v.best=Math.max(v.best||0,score);v.level=Math.max(v.level||1,level+1);v.wins=(v.wins||0)+1;localStorage.setItem(key,JSON.stringify(v))}catch{}window.MindoraQuest?.complete()}}}
+$('play').onclick=()=>{try{if(!window.__holeReady){$('description').textContent='The game is still loading. Please wait a moment.';return}const title=$('heading').textContent;$('overlay').classList.add('hidden');if(title==='LEVEL COMPLETE!'){level++;goal=75+Math.min(level-1,6)*10;time=300+Math.min(level-1,5)*25;buildWorld()}else if(title==='TIME IS UP!'){buildWorld()}playing=true;last=performance.now();track('game_start',{level})}catch(err){console.error('Hole World start error',err);$('overlay').classList.remove('hidden');$('description').textContent='Could not start: '+(err?.message||String(err));$('play').textContent='TRY AGAIN ↻'}};
+$('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'🔊':'🔇'};
+try{const v=JSON.parse(localStorage.getItem('mindora-hole-world-v1')||'{}');if(Number.isFinite(v.level)&&v.level>1){level=Math.min(v.level,20);goal=75+Math.min(level-1,6)*10;time=300+Math.min(level-1,5)*25}}catch{}
+try{init();buildWorld();window.__holeReady=true;launchButton.disabled=false;launchButton.textContent='LET\'S PLAY ▶'}catch(e){console.error('Hole World init failed',e);$('error').style.display='block';$('error').innerHTML='The 3D game could not start on this browser. Try refreshing or using Safari / Chrome.<p><a href="./">Back to Mindora Games</a></p>'}
+</script><script src="./questbook.js"></script><script src="./player-profile.js"></script><div style="position:fixed;right:12px;bottom:12px;z-index:9;background:#152331dd;border:1px solid #e5d5ae88;border-radius:12px;padding:8px 12px;font-size:12px;color:#ffe3b6;pointer-events:none">TOKYO ART PREVIEW · WIP</div></body></html>
