@@ -30,4 +30,4 @@ $('restart').onclick=()=>{track('game_restart');draw()};
 $('replay').onclick=()=>{track('game_restart');draw()};
 document.querySelectorAll('.time-options button').forEach(b=>b.onclick=()=>{timeLimit=Number(b.dataset.time);document.querySelectorAll('.time-options button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));draw()});document.querySelectorAll('.level').forEach(b=>b.onclick=()=>{if(level===b.dataset.level)return;level=b.dataset.level;track('difficulty_select');draw()});
 draw();
-</script><script src="./mascot.js"></script><script src="./questbook.js"></script></body></html>
+</script><script src="./mascot.js"></script><script src="./questbook.js"></script><script src="./player-profile.js"></script></body></html>
