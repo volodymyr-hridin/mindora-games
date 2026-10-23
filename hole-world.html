@@ -42,9 +42,25 @@ resize();window.addEventListener('resize',resize);container.addEventListener('po
 function resize(){const w=innerWidth,h=innerHeight,aspect=w/h;const height=26,width=height*aspect;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();renderer.setSize(w,h)}
 const WORLDS=[
 ['Tokyo','Japan','neon'],['Delhi','India','market'],['Shanghai','China','skyline'],['Dhaka','Bangladesh','market'],['São Paulo','Brazil','tropical'],['Cairo','Egypt','desert'],['Mexico City','Mexico','fiesta'],['Beijing','China','skyline'],['Mumbai','India','market'],['Osaka','Japan','neon'],['New York','USA','skyline'],['Karachi','Pakistan','market'],['Chongqing','China','skyline'],['Istanbul','Türkiye','harbor'],['Buenos Aires','Argentina','fiesta'],['Lagos','Nigeria','tropical'],['Manila','Philippines','tropical'],['Kolkata','India','market'],['Kinshasa','DR Congo','tropical'],['Guangzhou','China','skyline'],['Paris','France','europe'],['London','UK','europe'],['Dubai','UAE','desert'],['Singapore','Singapore','tropical'],['Seoul','South Korea','neon'],['Valencia','Spain','harbor'],['Kyoto Village','Japan','village'],['Alpine Village','Switzerland','village'],['Tuscan Village','Italy','village'],['Carpathian Village','Ukraine','village'],['Provence Village','France','village'],['Andean Village','Peru','village'],['Dutch Countryside','Netherlands','village'],['English Farm','UK','village'],['Bavarian Village','Germany','village'],['Greek Island Village','Greece','village']];
-let worldIndex=-1,world=WORLDS[0],actors=[];
+let worldIndex=-1,world=WORLDS[0],actors=[],landmark3d=null,landmarkRequest=0;
+async function loadDetailedTokyo(){
+const token=++landmarkRequest;
+try{
+const {GLTFLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js');
+const loader=new GLTFLoader();
+const gltf=await loader.loadAsync('https://threejs.org/examples/models/gltf/LittlestTokyo.glb');
+if(token!==landmarkRequest||world[0]!=='Tokyo')return;
+const model=gltf.scene;const bounds=new THREE.Box3().setFromObject(model);const size=bounds.getSize(new THREE.Vector3());const center=bounds.getCenter(new THREE.Vector3());
+const factor=11/Math.max(size.x,size.y,size.z);model.scale.setScalar(factor);model.position.set(-17-center.x*factor,-center.y*factor+0.15,-18-center.z*factor);model.rotation.y=-.3;
+model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=true}});
+scene.add(model);landmark3d=model;
+$('notice').textContent='🏙️ TOKYO 3D LANDMARK LOADED';$('notice').classList.add('show');setTimeout(()=>$('notice').classList.remove('show'),1800);
+}catch(e){console.warn('Optional Tokyo 3D model unavailable, keeping playable city',e)}
+}
+
 function nextWorld(){let n=0;try{n=Number(localStorage.getItem('mindora-hole-world-rotation')||'0')||0;localStorage.setItem('mindora-hole-world-rotation',String(n+1))}catch{n=Math.floor(Math.random()*WORLDS.length)}worldIndex=n%WORLDS.length;world=WORLDS[worldIndex]}
 function buildWorld(){
+if(landmark3d){scene.remove(landmark3d);landmark3d=null}landmarkRequest++;
 nextWorld();actors=[];
 for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
 items=[];decor=[];particles=[];ground.material=world[2]==='desert'?mats.yellow:world[2]==='village'?mats.grass:level%2?mats.grass:mats.grass2;
@@ -84,7 +100,8 @@ function bridgePond(x,z){const g=group(x,z);const pond=mesh(new THREE.CylinderGe
 // Place thematic details away from the initial player position.
 const villageWorld=world[2]==='village';
 for(let i=0;i<34;i++){const x=(Math.random()-.5)*(W-10),z=(Math.random()-.5)*(D-12);if(Math.hypot(x,z-11)<9)continue;if(villageWorld){if(i%4===0)farmPlot(x,z,i);else if(i%4===1)flowerTree(x,z,i);else if(i%4===2)park(x,z,i);else marketStall(x,z,i)}else{if(i%5===0)park(x,z,i);else if(i%5===1)marketStall(x,z,i);else if(i%5===2)flowerTree(x,z,i);else streetLamp(x,z)}}
-if(villageWorld)bridgePond(-14,-20);else clockTower(-14,-20);
+if(villageWorld)bridgePond(-14,-20);else if(world[0]!=='Tokyo')clockTower(-14,-20);
+if(world[0]==='Tokyo')loadDetailedTokyo();
 // A handcrafted-feeling toy city: intersecting roads, blocks, sidewalks and themed districts.
 for(let x=-25;x<=25;x+=10){const g=group(x,0);B(g,0,.025,0,3.4,.07,D-3,asphalt);for(let z=-42;z<43;z+=4)B(g,0,.067,z,.11,.02,1.5,line);addDecor(g)}
 for(let z=-36;z<=36;z+=12){const g=group(0,z);B(g,0,.027,0,W-3,.07,3.1,asphalt);for(let x=-29;x<30;x+=4)B(g,x,.067,0,1.45,.02,.1,line);addDecor(g)}
