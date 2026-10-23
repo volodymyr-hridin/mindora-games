@@ -81,7 +81,36 @@ return addDecor(g)}
 function house(x,z,i){const g=group(x,z),wall=palette[i%6];B(g,0,.8,0,2,1.6,1.8,wall);const r=mesh(new THREE.ConeGeometry(1.55,1.35,4),i%2?roof:darkRoof,g);r.position.y=2.35;r.rotation.y=Math.PI/4;B(g,0,.55,.95,.48,.9,.09,door);for(const k of [-.65,.65]){B(g,k,1.18,.95,.43,.5,.1,glass);B(g,k,1.18,1.01,.07,.5,.06,mats.white)}
 B(g,-.85,.25,1.1,.65,.3,.42,mats.wood);S(g,-.85,.55,1.1,.25,mats.pink);return addDecor(g)}
 function tree(x,z,i){const g=group(x,z);C(g,0,.63,0,.19,1.25,mats.wood);for(let k=0;k<3;k++)S(g,(k-1)*.36,1.55+(k%2)*.4,0,.64,i%3===0?mats.pink:leaf);return addDecor(g)}
-function car(x,z,i){const g=group(x,z),c=palette[i%6];B(g,0,.36,0,1.28,.45,.78,c);B(g,-.08,.72,0,.72,.39,.69,glass);for(const xx of [-.43,.43])for(const zz of [-.41,.41])C(g,xx,.19,zz,.17,.13,mats.dark);B(g,.65,.37,0,.08,.19,.4,mats.yellow);return addItem(g,1.35)}
+// Detailed Japanese kei cars and delivery vans: layered body, windows,
+// rubber tyres, chrome rims, lights, licence plates and side mirrors.
+const carPaint=['#e6e4d9','#bb5050','#4c7e91','#d4b46a','#748a77','#696d7b'].map(h=>color(h));
+const tyreMat=color('#24272c'),chromeMat=color('#c4ccd0'),windowMat=color('#526e7c'),lampMat=color('#f7dfb0'),rearMat=color('#b74a46');
+function car(x,z,i){
+const g=group(x,z),paint=carPaint[i%carPaint.length],van=i%4===0;
+const length=van?1.85:1.5,bodyH=van?.65:.48;
+B(g,0,.39,0,length,bodyH,.92,paint);
+B(g,van?-.06:-.12,van?.91:.78,0,van?1.22:.84,van?.76:.45,.85,paint);
+B(g,van?-.06:-.13,van?1.02:.88,.437,van?.99:.7,van?.49:.3,.025,windowMat);
+B(g,van?-.06:-.13,van?1.02:.88,-.437,van?.99:.7,van?.49:.3,.025,windowMat);
+B(g,van?-.64:-.49,van?1.01:.89,0,.04,van?.48:.29,.7,windowMat);
+B(g,van?.55:.38,van?1.01:.89,0,.04,van?.48:.29,.7,windowMat);
+for(const xx of [-length*.32,length*.32])for(const zz of [-.48,.48]){
+const wheel=mesh(new THREE.CylinderGeometry(.235,.235,.12,16),tyreMat,g);
+wheel.rotation.x=Math.PI/2;wheel.position.set(xx,.235,zz);
+const hub=mesh(new THREE.CylinderGeometry(.105,.105,.125,12),chromeMat,g);
+hub.rotation.x=Math.PI/2;hub.position.set(xx,.235,zz)
+}
+for(const zz of [-.3,.3]){
+B(g,length/2+.025,.42,zz,.055,.15,.19,lampMat);
+B(g,-length/2-.025,.42,zz,.055,.14,.2,rearMat)
+}
+B(g,length/2+.032,.28,0,.035,.13,.32,chromeMat);
+B(g,-length/2-.032,.28,0,.035,.13,.32,chromeMat);
+for(const zz of [-.5,.5])B(g,.31,.8,zz,.18,.11,.07,paint);
+if(van){B(g,0,1.32,0,.75,.09,.73,chromeMat);B(g,-.4,.68,.48,.52,.045,.035,chromeMat)}
+g.rotation.y=i%2?Math.PI/2:0;
+return addItem(g,1.35)
+}
 function treasure(x,z,i){const g=group(x,z),type=i%6,c=palette[i%6];if(type===0){C(g,0,.32,0,.3,.64,c);S(g,0,.76,0,.28,mats.white);S(g,0,1.02,0,.15,mats.pink)}
 else if(type===1){B(g,0,.4,0,.65,.8,.65,c);B(g,0,.83,0,.74,.12,.74,mats.white);B(g,0,.43,.35,.2,.3,.08,mats.yellow)}
 else if(type===2){S(g,0,.4,0,.42,c);S(g,.16,.68,0,.15,mats.mint);C(g,0,.13,0,.18,.14,mats.wood)}
@@ -167,7 +196,25 @@ addDecor(g)
 }
 function makeSign(word,bg){
 const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,256,128);ctx.strokeStyle='#ffffff';ctx.lineWidth=8;ctx.strokeRect(8,8,240,112);ctx.fillStyle='#fff';ctx.font='bold 47px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(word,128,64);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return new THREE.MeshBasicMaterial({map:t,side:THREE.DoubleSide})}
-function sakura(x,z,i){const g=group(x,z);C(g,0,.95,0,.18,1.9,mats.wood);for(let j=0;j<8;j++){const angle=j*2.399;S(g,Math.cos(angle)*.55,2.2+(j%3)*.2,Math.sin(angle)*.5,.52,i%2?color('#f7b0d2'):color('#ffe0e9'))}addDecor(g)}
+// Layered sakura crowns, forked branches and irregular blossom clusters.
+const sakuraPetals=['#f6c3d5','#ffe0e5','#eeb3cd','#f8d8d7'].map(h=>color(h));
+function sakura(x,z,i){
+const g=group(x,z),branch=color('#7d6258');
+C(g,0,.93,0,.16,1.85,branch);
+for(let k=0;k<5;k++){
+const a=k*2.399,r=.55+(k%2)*.15;
+const bx=Math.cos(a)*r,bz=Math.sin(a)*r;
+const stem=C(g,bx*.52,1.87,bz*.52,.075,.85,branch);
+stem.rotation.z=-Math.cos(a)*.55;stem.rotation.x=Math.sin(a)*.5;
+for(let j=0;j<3;j++){
+const theta=j*2.1+k;
+const blossom=mesh(new THREE.IcosahedronGeometry(.45+(j%2)*.1,1),sakuraPetals[(i+k+j)%4],g);
+blossom.position.set(bx+Math.cos(theta)*.33,2.35+(j%2)*.28,bz+Math.sin(theta)*.31);
+blossom.scale.set(1.12,.75,1.02)
+}
+}
+addDecor(g)
+}
 function crossing(x,z){const g=group(x,z);for(let j=0;j<6;j++)B(g,-1.5+j*.6,.092,0,.34,.025,2.8,mats.white);addDecor(g)}
 // Tokyo street-level details: red torii gates, glowing lanterns and vending machines.
 const vermilion=color('#e84c45'),lanternGlow=color('#ffe1a0'),vendingBlue=color('#2b8ac6');
@@ -179,7 +226,7 @@ for(let x=-25;x<=25;x+=10){const g=group(x,0);B(g,0,.025,0,3.4,.07,D-3,asphalt);
 for(let z=-36;z<=36;z+=12){const g=group(0,z);B(g,0,.027,0,W-3,.07,3.1,asphalt);for(let x=-29;x<30;x+=4)B(g,x,.067,0,1.45,.02,.1,line);addDecor(g)}
 let seed=0;
 for(let x=-29;x<=29;x+=5.1)for(let z=-42;z<=42;z+=5.3){if(Math.hypot(x,z-11)<6)continue;const onRoad=Math.abs(((x+25+5)%10)-5)<2.8||Math.abs(((z+36+6)%12)-6)<2.5;if(onRoad)continue;const idx=seed++;const px=x+(Math.random()-.5)*.65,pz=z+(Math.random()-.5)*.65;
-if(world[2]==='village'){if(idx%3===0)house(px,pz,idx);else if(idx%4===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else if(idx%5===0)house(px,pz,idx);else tree(px,pz,idx)}else if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else if(world[0]==='Tokyo')tokyoFacade(px,pz,idx);else building(px,pz,idx)}
+if(world[2]==='village'){if(idx%3===0)house(px,pz,idx);else if(idx%4===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else if(idx%5===0)house(px,pz,idx);else tree(px,pz,idx)}else if(world[0]==='Tokyo'){if(idx%8===0)sakura(px,pz,idx);else tokyoFacade(px,pz,idx)}else if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else building(px,pz,idx)}
 if(world[0]==='Tokyo'){for(let j=0;j<18;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}}
 for(let i=0;i<95;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<3.5)continue;if(i%3===0)car(x,z,i);else treasure(x,z,i)}
 for(let i=0;i<40;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<5)continue;const g=group(x,z);C(g,0,.2,0,.06,.4,mats.mint);for(let k=0;k<5;k++)S(g,Math.cos(k*1.257)*.17,.45,Math.sin(k*1.257)*.17,.12,palette[(i+k)%6]);S(g,0,.45,0,.1,mats.yellow);addDecor(g)}
