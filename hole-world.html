@@ -164,34 +164,94 @@ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;te
 const mat=new THREE.MeshStandardMaterial({map:tex,roughness:.85,metalness:0});
 facadeMaterials.set(variant,mat);return mat
 }
+// Modular, reusable Tokyo 3D building kits: pitched roofs, side-window bays,
+// balconies, air-conditioning, shop awnings, pipework and rooftop equipment.
+// Each kit is constructed from actual 3D meshes, not a flat facade image.
+const tokyoMat={
+roof:color('#4b555e'),tile:color('#66717a'),frame:color('#53636c'),
+rail:color('#c4c8c3'),ac:color('#e0e1d8'),vent:color('#71818a'),
+wood:color('#886959'),cream:color('#eee3d2'),glass:color('#80b0b9'),
+red:color('#b94e53'),blue:color('#42758a'),green:color('#66836f')
+};
+const tokyoSignCache=new Map();
+function cachedTokyoSign(word,bg){
+const key=word+bg;if(!tokyoSignCache.has(key))tokyoSignCache.set(key,makeSign(word,bg));
+return tokyoSignCache.get(key)
+}
 function tokyoFacade(x,z,i){
-const g=group(x,z),height=4.3+(i%5)*.85,w=2.6+(i%3)*.35,depth=2.6;
-const wall=facadeTexture(i);
+const g=group(x,z),height=4.2+(i%5)*.8,w=2.65+(i%3)*.32,depth=2.65;
+const wall=facadeTexture(i),roof=tokyoMat.roof,frame=tokyoMat.frame;
 B(g,0,height/2,0,w,height,depth,wall);
-const roofMat=color('#505b65'),trim=color('#e8e0d3'),metal=color('#4c5e6b');
-B(g,0,height+.13,0,w+.28,.26,depth+.3,roofMat);
-B(g,0,.18,depth/2+.2,w+.28,.34,.65,trim);
-B(g,0,1.38,depth/2+.18,w+.3,.12,.55,roofMat);
-B(g,0,1.26,depth/2+.47,w+.24,.12,.18,i%2?color('#c64d5a'):color('#436c82'));
-for(let k=0;k<4;k++)B(g,-w*.36+k*w*.24,1.17,depth/2+.46,.055,.32,.055,trim);
-B(g,-w*.35,.72,depth/2+.15,.4,1.05,.1,metal);
-B(g,w*.35,.72,depth/2+.15,.4,1.05,.1,metal);
-for(let floor=1;floor<Math.floor(height/1.1);floor++){
-const y=1.7+floor*.82;
-B(g,0,y,depth/2+.13,w*.87,.065,.17,metal);
-if(floor%2===0)B(g,w*.25,y-.16,depth/2+.19,.48,.09,.2,trim);
+B(g,0,.19,depth/2+.2,w+.3,.38,.7,tokyoMat.cream);
+// Shop entrance: recessed-looking double glass doors, awning, noren panels.
+B(g,0,.69,depth/2+.09,w*.73,1.15,.09,tokyoMat.glass);
+B(g,0,.69,depth/2+.15,.085,1.15,.1,frame);
+for(const side of [-1,1]){
+B(g,side*w*.37,.68,depth/2+.14,.12,1.26,.15,frame);
+B(g,side*w*.32,1.08,depth/2+.18,.16,.07,.1,tokyoMat.rail)
 }
-const label=['ラーメン','喫茶店','東京','寿司','カフェ','花屋','本屋','焼鳥'][i%8];
-const sign=makeSign(label,i%3===0?'#b93e4d':i%3===1?'#284b70':'#47736a');
-const board=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.48),sign);
-board.position.set(0,1.85,depth/2+.22);g.add(board);
+B(g,0,1.39,depth/2+.39,w+.34,.13,.84,i%3===0?tokyoMat.red:i%3===1?tokyoMat.blue:tokyoMat.green);
+for(let k=0;k<7;k++)B(g,-w*.42+k*w*.14,1.19,depth/2+.72,w*.105,.35,.045,k%2?tokyoMat.cream:tokyoMat.red);
+// Every storey has physical window frames and exterior sills.
+for(let floor=0;floor<Math.floor((height-1.5)/.9);floor++){
+const y=2.03+floor*.88;
+for(const side of [-1,1]){
+const xx=side*w*.245;
+B(g,xx,y,depth/2+.065,.62,.57,.09,tokyoMat.glass);
+B(g,xx,y,depth/2+.12,.055,.62,.08,frame);
+B(g,xx,y+.3,depth/2+.12,.73,.075,.13,frame);
+B(g,xx,y-.3,depth/2+.15,.76,.095,.19,tokyoMat.cream);
+}
+// Side facade has windows visible from the camera's oblique view.
+B(g,w/2+.06,y,0,.08,.55,.78,tokyoMat.glass);
+B(g,w/2+.11,y,0,.09,.58,.055,frame);
+if(floor%2===0){
+const balconyY=y-.39;
+B(g,0,balconyY,depth/2+.35,w*.86,.1,.74,tokyoMat.cream);
+B(g,0,balconyY+.43,depth/2+.71,w*.86,.07,.07,tokyoMat.rail);
+for(let k=0;k<5;k++)B(g,-w*.35+k*w*.175,balconyY+.22,depth/2+.71,.055,.45,.065,frame);
+B(g,w*.35,balconyY+.15,depth/2+.49,.44,.32,.32,tokyoMat.ac);
+B(g,w*.35,balconyY+.16,depth/2+.665,.27,.21,.025,tokyoMat.vent);
+}
+}
+// Three distinct roof silhouettes: Japanese tiled pitch, flat urban and stepped.
 if(i%3===0){
-const tall=makeSign('東京','#d45159');
-const panel=new THREE.Mesh(new THREE.PlaneGeometry(.53,2.2),tall);
-panel.position.set(w/2+.13,height*.66,depth/2+.22);g.add(panel)
+B(g,0,height+.04,0,w+.38,.18,depth+.38,roof);
+for(const side of [-1,1]){
+const panel=B(g,side*w*.245,height+.48,0,w*.57,.09,depth+.5,tokyoMat.tile);
+panel.rotation.z=side*.37;
+for(let k=0;k<4;k++){
+const ridge=B(g,side*w*.25,height+.51,-depth*.37+k*depth*.24,w*.54,.035,.045,roof);
+ridge.rotation.z=side*.37
 }
-if(i%4===0){B(g,-w*.28,height+.54,-.4,.46,.7,.42,metal);B(g,w*.28,height+.35,.25,.62,.3,.46,trim)}
-if(i%3===1){for(let k=0;k<3;k++)B(g,-.65+k*.65,.19,depth/2+.68,.3,.26,.3,k%2?mats.mint:mats.pink)}
+}
+B(g,0,height+.83,0,.13,.12,depth+.6,roof)
+}else if(i%3===1){
+B(g,0,height+.12,0,w+.28,.23,depth+.3,roof);
+for(const xx of [-w*.39,w*.39])B(g,xx,height+.43,0,.12,.48,depth+.3,tokyoMat.cream);
+for(const zz of [-depth*.4,depth*.4])B(g,0,height+.43,zz,w+.25,.48,.12,tokyoMat.cream);
+B(g,-w*.24,height+.47,-.25,.68,.43,.58,tokyoMat.ac);
+B(g,w*.25,height+.52,.24,.45,.54,.45,tokyoMat.vent)
+}else{
+B(g,0,height+.11,0,w+.24,.2,depth+.25,roof);
+B(g,-w*.23,height+.53,-.15,w*.52,.65,depth*.63,tokyoMat.cream);
+B(g,-w*.23,height+.91,-.15,w*.57,.11,depth*.67,roof);
+B(g,w*.3,height+.42,.32,.46,.42,.48,tokyoMat.vent)
+}
+// External service pipe with bends, rooftop antenna and wall-mounted sign.
+B(g,w/2+.085,height*.5,-depth*.26,.09,height*.85,.09,tokyoMat.vent);
+B(g,w/2+.09,height*.91,-depth*.14,.09,.09,.34,tokyoMat.vent);
+if(i%4===0){
+B(g,w*.31,height+1.1,-.22,.045,1.3,.045,frame);
+B(g,w*.31,height+1.59,-.22,.55,.045,.045,frame)
+}
+const labels=['ラーメン','喫茶店','東京','寿司','カフェ','花屋','本屋','焼鳥'];
+const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.45,.48),cachedTokyoSign(labels[i%8],i%3===0?'#b93e4d':i%3===1?'#284b70':'#47736a'));
+sign.position.set(0,1.84,depth/2+.23);g.add(sign);
+if(i%3===0){
+const panel=new THREE.Mesh(new THREE.PlaneGeometry(.51,1.85),cachedTokyoSign('東京','#d45159'));
+panel.position.set(w/2+.15,height*.65,depth/2+.22);g.add(panel)
+}
 addDecor(g)
 }
 function makeSign(word,bg){
