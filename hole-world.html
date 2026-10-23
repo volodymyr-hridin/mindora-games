@@ -102,33 +102,69 @@ function bridgePond(x,z){const g=group(x,z);const pond=mesh(new THREE.CylinderGe
 const villageWorld=world[2]==='village';
 for(let i=0;i<34;i++){const x=(Math.random()-.5)*(W-10),z=(Math.random()-.5)*(D-12);if(Math.hypot(x,z-11)<9)continue;if(villageWorld){if(i%4===0)farmPlot(x,z,i);else if(i%4===1)flowerTree(x,z,i);else if(i%4===2)park(x,z,i);else marketStall(x,z,i)}else{if(i%5===0)park(x,z,i);else if(i%5===1)marketStall(x,z,i);else if(i%5===2)flowerTree(x,z,i);else streetLamp(x,z)}}
 if(villageWorld)bridgePond(-14,-20);else if(world[0]!=='Tokyo')clockTower(-14,-20);
-if(world[0]==='Tokyo')loadDetailedTokyo();
+// Keep the heavy external GLB out of the critical rendering path: the textured
+// Tokyo neighborhood is immediately playable without a large network download.
 // Tokyo art-direction pass: individually dressed facades, layered architecture, shopfronts,
 // Japanese signboards, illuminated windows, crossings, street furniture and sakura.
+// Hand-painted facade atlas: textured masonry, shop awnings, signage and glowing windows.
+// Cached by building variant to avoid expensive per-building canvas allocations.
+const facadeMaterials=new Map();
+function facadeTexture(i){
+const variant=i%8;if(facadeMaterials.has(variant))return facadeMaterials.get(variant);
+const canvas=document.createElement('canvas');canvas.width=256;canvas.height=512;
+const c=canvas.getContext('2d'),base=['#d7c3b1','#b9c8c5','#d5c6b8','#b9b9c7','#b6c5b0','#d3b4a7','#aebfc8','#cbbcae'][variant];
+c.fillStyle=base;c.fillRect(0,0,256,512);
+for(let y=0;y<512;y+=17){c.fillStyle='rgba(56,51,63,.09)';c.fillRect(0,y,256,2);
+for(let x=(Math.floor(y/17)%2)*24;x<256;x+=48)c.fillRect(x,y,2,17)}
+c.fillStyle='#343f50';c.fillRect(10,10,236,17);c.fillRect(10,490,236,14);
+for(let floor=0;floor<5;floor++)for(let col=0;col<2;col++){
+const x=26+col*119,y=37+floor*76;
+c.fillStyle='#f2eee4';c.fillRect(x-6,y-5,98,65);
+c.fillStyle=floor%2?'#38576b':'#4a6676';c.fillRect(x,y,86,54);
+const glow=c.createLinearGradient(x,y,x+86,y+54);glow.addColorStop(0,'#9db5bf');glow.addColorStop(1,(floor+col+variant)%3?'#d3d9c9':'#f8cf8c');
+c.fillStyle=glow;c.fillRect(x+4,y+4,78,46);
+c.fillStyle='#4c5a67';c.fillRect(x+41,y,5,54);c.fillRect(x,y+25,86,4);
+c.fillStyle='rgba(255,255,255,.28)';c.fillRect(x+8,y+6,7,36);
+c.fillStyle='#69767d';c.fillRect(x-8,y+55,102,8);
+}
+c.fillStyle='#59616a';c.fillRect(0,436,256,12);
+c.fillStyle=variant%2?'#8c3742':'#284e62';c.fillRect(0,449,256,63);
+for(let k=0;k<9;k++){c.fillStyle=k%2?'#fff0da':'#d24f54';c.fillRect(k*29,449,15,17)}
+c.fillStyle='#d2e5e3';c.fillRect(20,475,215,37);c.fillStyle='#455c6d';c.fillRect(118,475,8,37);
+const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=2;
+const mat=new THREE.MeshStandardMaterial({map:tex,roughness:.85,metalness:0});
+facadeMaterials.set(variant,mat);return mat
+}
 function tokyoFacade(x,z,i){
-const g=group(x,z),height=3.5+(i%6)*.95,w=2.4+(i%3)*.4,depth=2.6;
-const facade=[color('#f0e4d5'),color('#9fbfc2'),color('#b9b1c4'),color('#c79d91'),color('#aeb7a0')][i%5];
-B(g,0,height/2,0,w,height,depth,facade);
-B(g,0,height+.13,0,w+.23,.26,depth+.25,mats.dark);
-for(let floor=0;floor<Math.floor(height-.7);floor++){
-const y=1.55+floor*.81;
-for(const side of [-1,1]){
-const xw=side*w*.25;
-B(g,xw,y,depth/2+.045,.48,.51,.1,color('#283b62'));
-B(g,xw,y,depth/2+.11,.38,.41,.035,color((floor+i)%3?'#c7f4ff':'#ffe9b0'));
-B(g,xw,y,depth/2+.14,.035,.43,.03,mats.white);
-B(g,xw,y-.29,depth/2+.17,.54,.08,.17,mats.dark);
+const g=group(x,z),height=4.3+(i%5)*.85,w=2.6+(i%3)*.35,depth=2.6;
+const wall=facadeTexture(i);
+B(g,0,height/2,0,w,height,depth,wall);
+const roofMat=color('#505b65'),trim=color('#e8e0d3'),metal=color('#4c5e6b');
+B(g,0,height+.13,0,w+.28,.26,depth+.3,roofMat);
+B(g,0,.18,depth/2+.2,w+.28,.34,.65,trim);
+B(g,0,1.38,depth/2+.18,w+.3,.12,.55,roofMat);
+B(g,0,1.26,depth/2+.47,w+.24,.12,.18,i%2?color('#c64d5a'):color('#436c82'));
+for(let k=0;k<4;k++)B(g,-w*.36+k*w*.24,1.17,depth/2+.46,.055,.32,.055,trim);
+B(g,-w*.35,.72,depth/2+.15,.4,1.05,.1,metal);
+B(g,w*.35,.72,depth/2+.15,.4,1.05,.1,metal);
+for(let floor=1;floor<Math.floor(height/1.1);floor++){
+const y=1.7+floor*.82;
+B(g,0,y,depth/2+.13,w*.87,.065,.17,metal);
+if(floor%2===0)B(g,w*.25,y-.16,depth/2+.19,.48,.09,.2,trim);
 }
+const label=['ラーメン','喫茶店','東京','寿司','カフェ','花屋','本屋','焼鳥'][i%8];
+const sign=makeSign(label,i%3===0?'#b93e4d':i%3===1?'#284b70':'#47736a');
+const board=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.48),sign);
+board.position.set(0,1.85,depth/2+.22);g.add(board);
+if(i%3===0){
+const tall=makeSign('東京','#d45159');
+const panel=new THREE.Mesh(new THREE.PlaneGeometry(.53,2.2),tall);
+panel.position.set(w/2+.13,height*.66,depth/2+.22);g.add(panel)
 }
-B(g,0,.72,depth/2+.07,w*.86,1.25,.15,i%3?color('#314e67'):color('#ed7191'));
-B(g,0,.75,depth/2+.18,w*.69,.85,.07,color('#b6f3e9'));
-B(g,0,1.46,depth/2+.25,w*.98,.18,.4,i%2?mats.pink:mats.yellow);
-for(let j=0;j<3;j++)B(g,-w*.32+j*w*.32,1.46,depth/2+.49,w*.25,.18,.1,j%2?mats.white:mats.pink);
-const sign=makeSign(i%3===0?'ラーメン':i%3===1?'TOKYO':'カフェ',i%3===0?'#fa4c83':'#3568d7');
-const board=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.45),sign);board.position.set(0,2.2,depth/2+.16);g.add(board);
-if(i%4===0){const tall=makeSign('東京','#f45181');const panel=new THREE.Mesh(new THREE.PlaneGeometry(.55,2.25),tall);panel.position.set(w/2+.14,height*.56,depth/2+.16);g.add(panel)}
-if(i%6===0){for(let j=0;j<3;j++)B(g,-w*.29+j*w*.29,height+.45,0,.2,.6,.2,mats.white)}
-addDecor(g)}
+if(i%4===0){B(g,-w*.28,height+.54,-.4,.46,.7,.42,metal);B(g,w*.28,height+.35,.25,.62,.3,.46,trim)}
+if(i%3===1){for(let k=0;k<3;k++)B(g,-.65+k*.65,.19,depth/2+.68,.3,.26,.3,k%2?mats.mint:mats.pink)}
+addDecor(g)
+}
 function makeSign(word,bg){
 const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,256,128);ctx.strokeStyle='#ffffff';ctx.lineWidth=8;ctx.strokeRect(8,8,240,112);ctx.fillStyle='#fff';ctx.font='bold 47px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(word,128,64);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return new THREE.MeshBasicMaterial({map:t,side:THREE.DoubleSide})}
 function sakura(x,z,i){const g=group(x,z);C(g,0,.95,0,.18,1.9,mats.wood);for(let j=0;j<8;j++){const angle=j*2.399;S(g,Math.cos(angle)*.55,2.2+(j%3)*.2,Math.sin(angle)*.5,.52,i%2?color('#f7b0d2'):color('#ffe0e9'))}addDecor(g)}
