@@ -27,6 +27,7 @@ try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.m
 catch(primaryError){try{THREE=await import('https://unpkg.com/three@0.170.0/build/three.module.js')}
 catch(secondaryError){document.getElementById('error').style.display='block';document.getElementById('error').innerHTML='Unable to load the 3D engine. Please check your connection and refresh the page.<p><a href="./">Back to Mindora Games</a></p>';throw secondaryError}}
 const $=id=>document.getElementById(id),W=62,D=90,container=$('game');
+let ripple,effectMat,sparkPool=[],sparkCursor=0;
 let renderer,scene,camera,ground,portal,ring,shadow,steerTarget=null,items=[],decor=[],particles=[],playing=false,last=0,elapsed=0,score=0,level=1,goal=75,time=300,remaining=300,radius=1.15,dragging=false,prevPointer=null,activePointer=null,joystick={x:0,y:0},soundOn=true,audio=null,noticeTimer=null;
 const track=(name,extra={})=>{try{gtag('event',name,{game_name:'hole_world',...extra})}catch{}};
 const color=(hex)=>new THREE.MeshStandardMaterial({color:hex,roughness:.62,metalness:.02});
@@ -40,15 +41,15 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x8b9b65,1.65));const sun=new THREE
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,mats.water);ocean.receiveShadow=false;ground=makeBox(0,-.45,0,W,.8,D,mats.grass);ground.receiveShadow=true;makeBox(0,-.89,0,W+.3,.18,D+.3,mats.edge);
 const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,48),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-.031;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.035;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.005;shadow=holeGroup;holeGroup.position.set(0,.04,11);
 // Lightweight portal effects: pulsing energy rings and collectible sparkles.
-const effectMat=new THREE.MeshBasicMaterial({color:0x73e5f3,transparent:true,opacity:.58,depthWrite:false});
-const ripple=new THREE.Mesh(new THREE.TorusGeometry(1.19,.027,6,72),effectMat);
+effectMat=new THREE.MeshBasicMaterial({color:0x73e5f3,transparent:true,opacity:.58,depthWrite:false});
+ripple=new THREE.Mesh(new THREE.TorusGeometry(1.19,.027,6,72),effectMat);
 ripple.rotation.x=-Math.PI/2;ripple.position.y=.07;holeGroup.add(ripple);
 const sparkGeo=new THREE.OctahedronGeometry(.085,0);
 const sparkMats=[new THREE.MeshBasicMaterial({color:0xffdf8c}),new THREE.MeshBasicMaterial({color:0x8ce9fa}),new THREE.MeshBasicMaterial({color:0xff98c8})];
-const sparkPool=[];
+sparkPool=[];
 for(let k=0;k<28;k++){const sp=new THREE.Mesh(sparkGeo,sparkMats[k%3]);sp.visible=false;scene.add(sp);sparkPool.push({mesh:sp,life:0,vx:0,vy:0,vz:0})}
-let sparkCursor=0;
-function burst(x,z,size){
+sparkCursor=0;
+window.holeBurst=function(x,z,size){
 const count=5+Math.min(5,Math.round(size*2));
 for(let k=0;k<count;k++){const p=sparkPool[sparkCursor++%sparkPool.length],angle=(k/count)*Math.PI*2;
 p.life=.36+Math.random()*.24;p.mesh.visible=true;
@@ -367,7 +368,7 @@ o.userData.collected=true;o.userData.fall=0;
 o.userData.startX=o.position.x;o.userData.startZ=o.position.z;
 o.userData.startY=o.position.y;
 o.userData.baseScale=o.scale.clone();
-burst(o.position.x,o.position.z,o.userData.size);
+window.holeBurst?.(o.position.x,o.position.z,o.userData.size);
 }
 function finishCollect(o){
 if(o.userData.scored)return;
