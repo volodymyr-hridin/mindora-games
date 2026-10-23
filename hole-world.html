@@ -19,6 +19,7 @@ window.addEventListener('error',function(e){if(!window.__holeReady){desc.textCon
 window.addEventListener('unhandledrejection',function(e){if(!window.__holeReady){desc.textContent='3D engine load failed. Please try reloading or using another browser.';b.textContent='RELOAD GAME ↻'}});
 })();
 </script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module">
 const launchButton=document.getElementById("play");launchButton.disabled=true;launchButton.textContent="LOADING 3D…";
 let THREE;
@@ -42,25 +43,25 @@ resize();window.addEventListener('resize',resize);container.addEventListener('po
 function resize(){const w=innerWidth,h=innerHeight,aspect=w/h;const height=23,width=height*aspect;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();renderer.setSize(w,h)}
 const WORLDS=[
 ['Tokyo','Japan','neon'],['Delhi','India','market'],['Shanghai','China','skyline'],['Dhaka','Bangladesh','market'],['São Paulo','Brazil','tropical'],['Cairo','Egypt','desert'],['Mexico City','Mexico','fiesta'],['Beijing','China','skyline'],['Mumbai','India','market'],['Osaka','Japan','neon'],['New York','USA','skyline'],['Karachi','Pakistan','market'],['Chongqing','China','skyline'],['Istanbul','Türkiye','harbor'],['Buenos Aires','Argentina','fiesta'],['Lagos','Nigeria','tropical'],['Manila','Philippines','tropical'],['Kolkata','India','market'],['Kinshasa','DR Congo','tropical'],['Guangzhou','China','skyline'],['Paris','France','europe'],['London','UK','europe'],['Dubai','UAE','desert'],['Singapore','Singapore','tropical'],['Seoul','South Korea','neon'],['Valencia','Spain','harbor'],['Kyoto Village','Japan','village'],['Alpine Village','Switzerland','village'],['Tuscan Village','Italy','village'],['Carpathian Village','Ukraine','village'],['Provence Village','France','village'],['Andean Village','Peru','village'],['Dutch Countryside','Netherlands','village'],['English Farm','UK','village'],['Bavarian Village','Germany','village'],['Greek Island Village','Greece','village']];
-let worldIndex=-1,world=WORLDS[0],actors=[],landmark3d=null,landmarkRequest=0;
+let worldIndex=-1,world=WORLDS[0],actors=[],landmark3d=null,landmarkRequest=0,tokyoMixer=null;
 async function loadDetailedTokyo(){
 const token=++landmarkRequest;
 try{
-const {GLTFLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js');
+const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
 const loader=new GLTFLoader();
 const gltf=await loader.loadAsync('https://threejs.org/examples/models/gltf/LittlestTokyo.glb');
 if(token!==landmarkRequest||world[0]!=='Tokyo')return;
 const model=gltf.scene;const bounds=new THREE.Box3().setFromObject(model);const size=bounds.getSize(new THREE.Vector3());const center=bounds.getCenter(new THREE.Vector3());
 const factor=11/Math.max(size.x,size.y,size.z);model.scale.setScalar(factor);model.position.set(-17-center.x*factor,-center.y*factor+0.15,-18-center.z*factor);model.rotation.y=-.3;
 model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=true}});
-scene.add(model);landmark3d=model;
+scene.add(model);landmark3d=model;if(gltf.animations?.length){tokyoMixer=new THREE.AnimationMixer(model);for(const clip of gltf.animations)tokyoMixer.clipAction(clip).play()}
 $('notice').textContent='🏙️ TOKYO 3D LANDMARK LOADED';$('notice').classList.add('show');setTimeout(()=>$('notice').classList.remove('show'),1800);
 }catch(e){console.warn('Optional Tokyo 3D model unavailable, keeping playable city',e)}
 }
 
 function nextWorld(){let n=0;try{n=Number(localStorage.getItem('mindora-hole-world-rotation')||'0')||0;localStorage.setItem('mindora-hole-world-rotation',String(n+1))}catch{n=Math.floor(Math.random()*WORLDS.length)}worldIndex=n%WORLDS.length;world=WORLDS[worldIndex];if(new URLSearchParams(location.search).get('showcase')==='tokyo'){worldIndex=0;world=WORLDS[0]}}
 function buildWorld(){
-if(landmark3d){scene.remove(landmark3d);landmark3d=null}landmarkRequest++;
+if(landmark3d){scene.remove(landmark3d);landmark3d=null}tokyoMixer=null;landmarkRequest++;
 nextWorld();actors=[];
 for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
 items=[];decor=[];particles=[];ground.material=world[2]==='desert'?mats.yellow:world[2]==='village'?mats.grass:level%2?mats.grass:mats.grass2;
@@ -170,7 +171,7 @@ function announce(s){$('notice').textContent=s;$('notice').classList.add('show')
 function updateHud(){$('time').textContent=Math.max(0,Math.ceil(remaining));$('score').textContent=score+' / '+goal;$('size').textContent='LV '+Math.min(5,1+Math.floor(score/8));$('fill').style.width=Math.min(100,score/goal*100)+'%';$('level').textContent='🌍 '+world[0].toUpperCase()+' · '+world[1].toUpperCase()+' · LEVEL '+level}
 function collect(o){o.userData.collected=true;o.userData.fall=.01;score++;beep(420+Math.min(score,30)*12);if(score===12||score===28||score===48||score===65){radius+=.36;announce('PORTAL GROWS! ✨');beep(780)}updateHud();if(score>=goal){playing=false;showEnd(true,'LEVEL COMPLETE!','Amazing! You collected '+score+' treasures. Ready for the next island?')}}
 function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000||.016);last=now;if(playing){if(dragging){const speed=10.5;portal.position.x=THREE.MathUtils.clamp(portal.position.x+joystick.x*speed*dt,-W/2+radius,W/2-radius);portal.position.z=THREE.MathUtils.clamp(portal.position.z+joystick.y*speed*dt,-D/2+radius,D/2-radius)}remaining-=dt;elapsed+=dt;if(remaining<=0){remaining=0;playing=false;showEnd(false,'TIME IS UP!','You collected '+score+' of '+goal+' treasures. Try again!')}updateHud()}
-for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.z+=dt*.6;portal.scale.setScalar(radius);const follow=1-Math.exp(-dt*3.6);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(23-camera.position.y)*follow;camera.position.z+=(portal.position.z+28-camera.position.z)*follow;camera.lookAt(camera.position.x,0,camera.position.z-28);for(const o of items){if(o.userData.collected){o.userData.fall+=dt*3;o.position.y=-o.userData.fall*2;o.scale.setScalar(Math.max(.001,1-o.userData.fall));if(o.userData.fall>=1){scene.remove(o)}continue}o.rotation.y+=dt*.38;if(!playing)continue;const d=Math.hypot(o.position.x-portal.position.x,o.position.z-portal.position.z);if(d<radius*.84&&o.userData.size<radius*.8)collect(o)}
+if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.z+=dt*.6;portal.scale.setScalar(radius);const follow=1-Math.exp(-dt*3.6);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(23-camera.position.y)*follow;camera.position.z+=(portal.position.z+28-camera.position.z)*follow;camera.lookAt(camera.position.x,0,camera.position.z-28);for(const o of items){if(o.userData.collected){o.userData.fall+=dt*3;o.position.y=-o.userData.fall*2;o.scale.setScalar(Math.max(.001,1-o.userData.fall));if(o.userData.fall>=1){scene.remove(o)}continue}o.rotation.y+=dt*.38;if(!playing)continue;const d=Math.hypot(o.position.x-portal.position.x,o.position.z-portal.position.z);if(d<radius*.84&&o.userData.size<radius*.8)collect(o)}
 renderer.render(scene,camera)}
 function showEnd(won,title,description,paused=false){$('overlay').classList.remove('hidden');$('face').textContent=won?'🏆🌈':paused?'⏸️🌀':'⏰🍭';$('heading').textContent=title;$('description').textContent=description;$('play').textContent=won?'NEXT LEVEL ▶':paused?'RESUME ▶':'TRY AGAIN ▶';if(!paused){track('game_complete',{score,level,success:won,duration_seconds:Math.round(elapsed)});if(won){try{const key='mindora-hole-world-v1',v=JSON.parse(localStorage.getItem(key)||'{}');v.best=Math.max(v.best||0,score);v.level=Math.max(v.level||1,level+1);v.wins=(v.wins||0)+1;localStorage.setItem(key,JSON.stringify(v))}catch{}window.MindoraQuest?.complete()}}}
 $('play').onclick=()=>{try{if(!window.__holeReady){$('description').textContent='The game is still loading. Please wait a moment.';return}const title=$('heading').textContent;$('overlay').classList.add('hidden');if(title==='LEVEL COMPLETE!'){level++;goal=75+Math.min(level-1,6)*10;time=300+Math.min(level-1,5)*25;buildWorld()}else if(title==='TIME IS UP!'){buildWorld()}playing=true;last=performance.now();track('game_start',{level})}catch(err){console.error('Hole World start error',err);$('overlay').classList.remove('hidden');$('description').textContent='Could not start: '+(err?.message||String(err));$('play').textContent='TRY AGAIN ↻'}};
