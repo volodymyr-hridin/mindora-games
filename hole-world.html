@@ -40,14 +40,43 @@ const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,mats.water);ocean.receiveShadow=fals
 const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,48),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-.031;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.035;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.005;shadow=holeGroup;holeGroup.position.set(0,.04,11);
 resize();window.addEventListener('resize',resize);container.addEventListener('pointerdown',down);container.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);container.addEventListener('touchmove',e=>{if(e.cancelable)e.preventDefault()},{passive:false});document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){playing=false;showEnd(false,'Paused','Your adventure is waiting. Tap to resume.',true)}});requestAnimationFrame(frame)}
 function resize(){const w=innerWidth,h=innerHeight,aspect=w/h;const height=26,width=height*aspect;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();renderer.setSize(w,h)}
-function buildWorld(){for(const m of [...items,...decor,...particles]){scene.remove(m);if(m.userData.group)m.userData.group.traverse(o=>{if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==sphereGeo&&o.geometry!==cylGeo)o.geometry.dispose()})}items=[];decor=[];particles=[];ground.material=level%2?mats.grass:mats.grass2;
-const colors=[mats.pink,mats.orange,mats.yellow,mats.purple,mats.blue,mats.mint];const count=350+Math.min(level,5)*25;
-for(let i=0;i<count;i++){let x=(Math.random()-.5)*(W-2),z=(Math.random()-.5)*(D-2);if(Math.hypot(x,z-11)<3)continue;const size=Math.random()<.7?.25+Math.random()*.24:.52+Math.random()*.3;const type=Math.floor(Math.random()*4),group=new THREE.Group();scene.add(group);let main;if(type===0){main=mesh(sphereGeo,colors[i%colors.length],group);main.scale.set(size,size*.9,size);const cap=mesh(new THREE.ConeGeometry(size*.3,size*.45,7),mats.mint,group);cap.position.y=size*.95}else if(type===1){main=mesh(boxGeo,colors[i%colors.length],group);main.scale.set(size*1.65,size*1.65,size*1.65);main.rotation.y=Math.random()*3}else if(type===2){main=mesh(new THREE.TorusGeometry(size*.68,size*.25,8,14),colors[i%colors.length],group);main.rotation.x=Math.PI/2;main.position.y=size*.85;const dot=ball(0,size*.8,0,size*.28,mats.white,group)}else{main=mesh(cylGeo,colors[i%colors.length],group);main.scale.set(size*.8,size*1.6,size*.8);main.position.y=size*.85;ball(0,size*1.65,0,size*.3,mats.white,group)}group.position.set(x,.06,z);group.userData={group:true,size:size*.95,collected:false,fall:0,spin:Math.random()*6.28};items.push(group)}
-for(let i=0;i<155;i++){const x=(Math.random()-.5)*(W-1),z=(Math.random()-.5)*(D-1);if(Math.hypot(x,z-11)<4)continue;const flower=new THREE.Group();scene.add(flower);const stem=mesh(cylGeo,mats.mint,flower);stem.scale.set(.055,.34,.055);stem.position.y=.2;for(let j=0;j<5;j++){const petal=ball(Math.cos(j*1.256)*.17,.42,Math.sin(j*1.256)*.17,.13,[mats.pink,mats.yellow,mats.white][i%3],flower)}ball(0,.42,0,.12,mats.orange,flower);flower.position.set(x,.03,z);decor.push(flower)}
-
-// Chunky toy trees, candy towers, picnic islands and colorful landmarks
-for(let i=0;i<76;i++){const x=(Math.random()-.5)*(W-4),z=(Math.random()-.5)*(D-4);if(Math.hypot(x,z-11)<6)continue;const g=new THREE.Group();scene.add(g);const tall=1.6+Math.random()*2.7;if(i%4===0){const trunk=mesh(cylGeo,mats.wood,g);trunk.scale.set(.27,tall*.38,.27);trunk.position.y=tall*.38;for(let k=0;k<3;k++){const crown=mesh(sphereGeo,[mats.pink,mats.purple,mats.yellow,mats.mint][(i+k)%4],g);crown.scale.set(.9-k*.14,.72-k*.08,.9-k*.14);crown.position.set((k-1)*.38,tall*.6+k*.5,0)}}else if(i%4===1){const tower=mesh(cylGeo,[mats.purple,mats.blue,mats.pink][i%3],g);tower.scale.set(.75,tall*.55,.75);tower.position.y=tall*.55;const top=mesh(new THREE.ConeGeometry(1.05,1.2,8),mats.yellow,g);top.position.y=tall+0.6}else if(i%4===2){const base=mesh(boxGeo,mats.wood,g);base.scale.set(1.8,.3,1.4);base.position.y=.2;for(let k=0;k<3;k++){const candy=mesh(sphereGeo,[mats.orange,mats.pink,mats.mint][k],g);candy.scale.set(.45,.45,.45);candy.position.set((k-1)*.48,.75,.05)}}else{const rock=mesh(sphereGeo,mats.blue,g);rock.scale.set(1.1,.65,.95);rock.position.y=.4;const topper=mesh(sphereGeo,mats.white,g);topper.scale.set(.38,.38,.38);topper.position.set(0,1.03,0)}g.position.set(x,.04,z);decor.push(g)}
-portal.position.set(0,.04,11);radius=1.15;portal.scale.setScalar(radius);score=0;remaining=time;elapsed=0;updateHud()}
+function buildWorld(){
+for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
+items=[];decor=[];particles=[];ground.material=level%2?mats.grass:mats.grass2;
+const palette=[mats.pink,mats.orange,mats.yellow,mats.purple,mats.blue,mats.mint];
+const asphalt=color('#718aaf'),pavement=color('#e7d9b4'),line=color('#fffae0'),glass=color('#bdefff'),roof=color('#f8798b'),door=color('#4a547e'),leaf=color('#51c985'),darkRoof=color('#665cc7');
+function B(parent,x,y,z,w,h,d,mat){return makeBox(x,y,z,w,h,d,mat,parent)}
+function C(parent,x,y,z,r,h,mat){const o=mesh(cylGeo,mat,parent);o.position.set(x,y,z);o.scale.set(r,h,r);return o}
+function S(parent,x,y,z,r,mat){return ball(x,y,z,r,mat,parent)}
+function group(x,z){const g=new THREE.Group();scene.add(g);g.position.set(x,.05,z);return g}
+function addDecor(g){decor.push(g);return g}
+function addItem(g,size){g.userData={group:true,size,collected:false,fall:0};items.push(g);return g}
+function building(x,z,idx){const g=group(x,z),w=1.7+(idx%3)*.36,h=2.1+(idx%5)*.68,d=1.8;const wall=palette[idx%palette.length];B(g,0,h/2,0,w,h,d,wall);B(g,0,h+.13,0,w+.23,.28,d+.23,idx%2?roof:darkRoof);B(g,0,.7,d/2+.025,.48,1.1,.08,door);
+for(let row=0;row<Math.min(4,Math.floor(h));row++)for(let col=-1;col<=1;col+=2){B(g,col*w*.26,1.45+row*.72,d/2+.07,.35,.39,.09,glass);B(g,col*w*.26,1.45+row*.72,d/2+.13,.09,.39,.06,mats.white)}
+if(idx%4===0){const chimney=B(g,w*.27,h+.57,-.25,.32,.9,.35,mats.white);B(g,w*.27,h+1.04,-.25,.45,.12,.46,roof)}
+if(idx%5===0){B(g,0,h+.65,0,.12,.95,.12,mats.wood);S(g,0,h+1.2,0,.25,mats.yellow)}
+return addDecor(g)}
+function house(x,z,i){const g=group(x,z),wall=palette[i%6];B(g,0,.8,0,2,1.6,1.8,wall);const r=mesh(new THREE.ConeGeometry(1.55,1.35,4),i%2?roof:darkRoof,g);r.position.y=2.35;r.rotation.y=Math.PI/4;B(g,0,.55,.95,.48,.9,.09,door);for(const k of [-.65,.65]){B(g,k,1.18,.95,.43,.5,.1,glass);B(g,k,1.18,1.01,.07,.5,.06,mats.white)}
+B(g,-.85,.25,1.1,.65,.3,.42,mats.wood);S(g,-.85,.55,1.1,.25,mats.pink);return addDecor(g)}
+function tree(x,z,i){const g=group(x,z);C(g,0,.63,0,.19,1.25,mats.wood);for(let k=0;k<3;k++)S(g,(k-1)*.36,1.55+(k%2)*.4,0,.64,i%3===0?mats.pink:leaf);return addDecor(g)}
+function car(x,z,i){const g=group(x,z),c=palette[i%6];B(g,0,.36,0,1.28,.45,.78,c);B(g,-.08,.72,0,.72,.39,.69,glass);for(const xx of [-.43,.43])for(const zz of [-.41,.41])C(g,xx,.19,zz,.17,.13,mats.dark);B(g,.65,.37,0,.08,.19,.4,mats.yellow);return addItem(g,.73)}
+function treasure(x,z,i){const g=group(x,z),type=i%6,c=palette[i%6];if(type===0){C(g,0,.32,0,.3,.64,c);S(g,0,.76,0,.28,mats.white);S(g,0,1.02,0,.15,mats.pink)}
+else if(type===1){B(g,0,.4,0,.65,.8,.65,c);B(g,0,.83,0,.74,.12,.74,mats.white);B(g,0,.43,.35,.2,.3,.08,mats.yellow)}
+else if(type===2){S(g,0,.4,0,.42,c);S(g,.16,.68,0,.15,mats.mint);C(g,0,.13,0,.18,.14,mats.wood)}
+else if(type===3){B(g,0,.19,0,.85,.25,.6,mats.wood);for(let k=0;k<3;k++)S(g,(k-1)*.25,.47,0,.19,palette[(i+k)%6])}
+else if(type===4){C(g,0,.32,0,.33,.64,c);const top=mesh(new THREE.ConeGeometry(.48,.55,7),mats.yellow,g);top.position.y=.89}
+else{B(g,0,.3,0,.8,.6,.65,c);B(g,0,.64,0,.84,.1,.7,mats.white);B(g,0,.31,.36,.26,.28,.08,glass)}
+return addItem(g,.5)}
+// A handcrafted-feeling toy city: intersecting roads, blocks, sidewalks and themed districts.
+for(let x=-25;x<=25;x+=10){const g=group(x,0);B(g,0,.025,0,3.4,.07,D-3,asphalt);for(let z=-42;z<43;z+=4)B(g,0,.067,z,.11,.02,1.5,line);addDecor(g)}
+for(let z=-36;z<=36;z+=12){const g=group(0,z);B(g,0,.027,0,W-3,.07,3.1,asphalt);for(let x=-29;x<30;x+=4)B(g,x,.067,0,1.45,.02,.1,line);addDecor(g)}
+let seed=0;
+for(let x=-29;x<=29;x+=5.1)for(let z=-42;z<=42;z+=5.3){if(Math.hypot(x,z-11)<6)continue;const onRoad=Math.abs(((x+25+5)%10)-5)<2.8||Math.abs(((z+36+6)%12)-6)<2.5;if(onRoad)continue;const idx=seed++;const px=x+(Math.random()-.5)*.65,pz=z+(Math.random()-.5)*.65;
+if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else building(px,pz,idx)}
+for(let i=0;i<145;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<3.5)continue;if(i%3===0)car(x,z,i);else treasure(x,z,i)}
+for(let i=0;i<90;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<5)continue;const g=group(x,z);C(g,0,.2,0,.06,.4,mats.mint);for(let k=0;k<5;k++)S(g,Math.cos(k*1.257)*.17,.45,Math.sin(k*1.257)*.17,.12,palette[(i+k)%6]);S(g,0,.45,0,.1,mats.yellow);addDecor(g)}
+portal.position.set(0,.04,11);radius=1.15;portal.scale.setScalar(radius);score=0;remaining=time;elapsed=0;updateHud()
+}
 function down(e){if(!playing)return;dragging=true;prevPointer={x:e.clientX,y:e.clientY};try{container.setPointerCapture(e.pointerId)}catch{}e.preventDefault()}
 function move(e){if(!playing||!dragging||!prevPointer)return;const dx=e.clientX-prevPointer.x,dy=e.clientY-prevPointer.y;prevPointer={x:e.clientX,y:e.clientY};const scale=(camera.right-camera.left)/innerWidth;portal.position.x=THREE.MathUtils.clamp(portal.position.x+dx*scale,-W/2+radius,W/2-radius);portal.position.z=THREE.MathUtils.clamp(portal.position.z+dy*scale,-D/2+radius,D/2-radius);e.preventDefault()}
 function up(){dragging=false;prevPointer=null}
