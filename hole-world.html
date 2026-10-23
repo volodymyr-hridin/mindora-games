@@ -58,7 +58,7 @@ $('notice').textContent='🏙️ TOKYO 3D LANDMARK LOADED';$('notice').classList
 }catch(e){console.warn('Optional Tokyo 3D model unavailable, keeping playable city',e)}
 }
 
-function nextWorld(){let n=0;try{n=Number(localStorage.getItem('mindora-hole-world-rotation')||'0')||0;localStorage.setItem('mindora-hole-world-rotation',String(n+1))}catch{n=Math.floor(Math.random()*WORLDS.length)}worldIndex=n%WORLDS.length;world=WORLDS[worldIndex]}
+function nextWorld(){let n=0;try{n=Number(localStorage.getItem('mindora-hole-world-rotation')||'0')||0;localStorage.setItem('mindora-hole-world-rotation',String(n+1))}catch{n=Math.floor(Math.random()*WORLDS.length)}worldIndex=n%WORLDS.length;world=WORLDS[worldIndex];if(new URLSearchParams(location.search).get('showcase')==='tokyo'){worldIndex=0;world=WORLDS[0]}}
 function buildWorld(){
 if(landmark3d){scene.remove(landmark3d);landmark3d=null}landmarkRequest++;
 nextWorld();actors=[];
@@ -102,12 +102,43 @@ const villageWorld=world[2]==='village';
 for(let i=0;i<34;i++){const x=(Math.random()-.5)*(W-10),z=(Math.random()-.5)*(D-12);if(Math.hypot(x,z-11)<9)continue;if(villageWorld){if(i%4===0)farmPlot(x,z,i);else if(i%4===1)flowerTree(x,z,i);else if(i%4===2)park(x,z,i);else marketStall(x,z,i)}else{if(i%5===0)park(x,z,i);else if(i%5===1)marketStall(x,z,i);else if(i%5===2)flowerTree(x,z,i);else streetLamp(x,z)}}
 if(villageWorld)bridgePond(-14,-20);else if(world[0]!=='Tokyo')clockTower(-14,-20);
 if(world[0]==='Tokyo')loadDetailedTokyo();
+// Tokyo art-direction pass: individually dressed facades, layered architecture, shopfronts,
+// Japanese signboards, illuminated windows, crossings, street furniture and sakura.
+function tokyoFacade(x,z,i){
+const g=group(x,z),height=3.5+(i%6)*.95,w=2.4+(i%3)*.4,depth=2.6;
+const facade=[color('#f4e4d1'),color('#b2d8dd'),color('#d3c8ee'),color('#f0b9b5'),color('#d5e0c1')][i%5];
+B(g,0,height/2,0,w,height,depth,facade);
+B(g,0,height+.13,0,w+.23,.26,depth+.25,mats.dark);
+for(let floor=0;floor<Math.floor(height-.7);floor++){
+const y=1.55+floor*.81;
+for(const side of [-1,1]){
+const xw=side*w*.25;
+B(g,xw,y,depth/2+.045,.48,.51,.1,color('#283b62'));
+B(g,xw,y,depth/2+.11,.38,.41,.035,color((floor+i)%3?'#c7f4ff':'#ffe9b0'));
+B(g,xw,y,depth/2+.14,.035,.43,.03,mats.white);
+B(g,xw,y-.29,depth/2+.17,.54,.08,.17,mats.dark);
+}
+}
+B(g,0,.72,depth/2+.07,w*.86,1.25,.15,i%3?color('#314e67'):color('#ed7191'));
+B(g,0,.75,depth/2+.18,w*.69,.85,.07,color('#b6f3e9'));
+B(g,0,1.46,depth/2+.25,w*.98,.18,.4,i%2?mats.pink:mats.yellow);
+for(let j=0;j<3;j++)B(g,-w*.32+j*w*.32,1.46,depth/2+.49,w*.25,.18,.1,j%2?mats.white:mats.pink);
+const sign=makeSign(i%3===0?'ラーメン':i%3===1?'TOKYO':'カフェ',i%3===0?'#fa4c83':'#3568d7');
+const board=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.45),sign);board.position.set(0,2.2,depth/2+.16);g.add(board);
+if(i%4===0){const tall=makeSign('東京','#f45181');const panel=new THREE.Mesh(new THREE.PlaneGeometry(.55,2.25),tall);panel.position.set(w/2+.14,height*.56,depth/2+.16);g.add(panel)}
+if(i%6===0){for(let j=0;j<3;j++)B(g,-w*.29+j*w*.29,height+.45,0,.2,.6,.2,mats.white)}
+addDecor(g)}
+function makeSign(word,bg){
+const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,256,128);ctx.strokeStyle='#ffffff';ctx.lineWidth=8;ctx.strokeRect(8,8,240,112);ctx.fillStyle='#fff';ctx.font='bold 47px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(word,128,64);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return new THREE.MeshBasicMaterial({map:t,side:THREE.DoubleSide})}
+function sakura(x,z,i){const g=group(x,z);C(g,0,.95,0,.18,1.9,mats.wood);for(let j=0;j<8;j++){const angle=j*2.399;S(g,Math.cos(angle)*.55,2.2+(j%3)*.2,Math.sin(angle)*.5,.52,i%2?color('#f7b0d2'):color('#ffe0e9'))}addDecor(g)}
+function crossing(x,z){const g=group(x,z);for(let j=0;j<6;j++)B(g,-1.5+j*.6,.092,0,.34,.025,2.8,mats.white);addDecor(g)}
 // A handcrafted-feeling toy city: intersecting roads, blocks, sidewalks and themed districts.
 for(let x=-25;x<=25;x+=10){const g=group(x,0);B(g,0,.025,0,3.4,.07,D-3,asphalt);for(let z=-42;z<43;z+=4)B(g,0,.067,z,.11,.02,1.5,line);addDecor(g)}
 for(let z=-36;z<=36;z+=12){const g=group(0,z);B(g,0,.027,0,W-3,.07,3.1,asphalt);for(let x=-29;x<30;x+=4)B(g,x,.067,0,1.45,.02,.1,line);addDecor(g)}
 let seed=0;
 for(let x=-29;x<=29;x+=5.1)for(let z=-42;z<=42;z+=5.3){if(Math.hypot(x,z-11)<6)continue;const onRoad=Math.abs(((x+25+5)%10)-5)<2.8||Math.abs(((z+36+6)%12)-6)<2.5;if(onRoad)continue;const idx=seed++;const px=x+(Math.random()-.5)*.65,pz=z+(Math.random()-.5)*.65;
-if(world[2]==='village'){if(idx%3===0)house(px,pz,idx);else if(idx%4===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else if(idx%5===0)house(px,pz,idx);else tree(px,pz,idx)}else if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else building(px,pz,idx)}
+if(world[2]==='village'){if(idx%3===0)house(px,pz,idx);else if(idx%4===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else if(idx%5===0)house(px,pz,idx);else tree(px,pz,idx)}else if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else if(world[0]==='Tokyo')tokyoFacade(px,pz,idx);else building(px,pz,idx)}
+if(world[0]==='Tokyo'){for(let j=0;j<38;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z)}
 for(let i=0;i<145;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<3.5)continue;if(i%3===0)car(x,z,i);else treasure(x,z,i)}
 for(let i=0;i<90;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<5)continue;const g=group(x,z);C(g,0,.2,0,.06,.4,mats.mint);for(let k=0;k<5;k++)S(g,Math.cos(k*1.257)*.17,.45,Math.sin(k*1.257)*.17,.12,palette[(i+k)%6]);S(g,0,.45,0,.1,mats.yellow);addDecor(g)}
 
