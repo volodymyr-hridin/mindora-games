@@ -27,7 +27,7 @@ try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.m
 catch(primaryError){try{THREE=await import('https://unpkg.com/three@0.170.0/build/three.module.js')}
 catch(secondaryError){document.getElementById('error').style.display='block';document.getElementById('error').innerHTML='Unable to load the 3D engine. Please check your connection and refresh the page.<p><a href="./">Back to Mindora Games</a></p>';throw secondaryError}}
 const $=id=>document.getElementById(id),W=62,D=90,container=$('game');
-let ripple,effectMat,sparkPool=[],sparkCursor=0;
+let ripple,effectMat,sparkPool=[],sparkCursor=0,swirlStars=[];
 let renderer,scene,camera,ground,portal,ring,shadow,steerTarget=null,items=[],decor=[],particles=[],playing=false,last=0,elapsed=0,score=0,level=1,goal=75,time=300,remaining=300,radius=1.15,dragging=false,prevPointer=null,activePointer=null,joystick={x:0,y:0},soundOn=true,audio=null,noticeTimer=null;
 const track=(name,extra={})=>{try{gtag('event',name,{game_name:'hole_world',...extra})}catch{}};
 const color=(hex)=>new THREE.MeshStandardMaterial({color:hex,roughness:.62,metalness:.02});
@@ -39,16 +39,25 @@ function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.pos
 function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#8cd7ee');scene.fog=new THREE.Fog('#8cd7ee',55,115);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(0,23,39);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;container.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x8b9b65,1.65));const sun=new THREE.DirectionalLight(0xfff4d5,2.3);sun.position.set(-9,23,12);sun.castShadow=false;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,mats.water);ocean.receiveShadow=false;ground=makeBox(0,-.45,0,W,.8,D,mats.grass);ground.receiveShadow=true;makeBox(0,-.89,0,W+.3,.18,D+.3,mats.edge);
-const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,48),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-.031;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.035;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.005;shadow=holeGroup;holeGroup.position.set(0,.04,11);
+const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=.19;disk.renderOrder=100;disk.material.depthTest=false;disk.material.depthWrite=false;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.205;ring.renderOrder=102;ring.material.depthTest=false;ring.material.depthWrite=false;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.208;inner.renderOrder=101;inner.material.depthTest=false;inner.material.depthWrite=false;shadow=holeGroup;holeGroup.position.set(0,.04,11);
 // Lightweight portal effects: pulsing energy rings and collectible sparkles.
 effectMat=new THREE.MeshBasicMaterial({color:0x73e5f3,transparent:true,opacity:.58,depthWrite:false});
 ripple=new THREE.Mesh(new THREE.TorusGeometry(1.19,.027,6,72),effectMat);
-ripple.rotation.x=-Math.PI/2;ripple.position.y=.07;holeGroup.add(ripple);
+ripple.rotation.x=-Math.PI/2;ripple.position.y=.215;ripple.renderOrder=103;effectMat.depthTest=false;holeGroup.add(ripple);
 const sparkGeo=new THREE.OctahedronGeometry(.085,0);
 const sparkMats=[new THREE.MeshBasicMaterial({color:0xffdf8c}),new THREE.MeshBasicMaterial({color:0x8ce9fa}),new THREE.MeshBasicMaterial({color:0xff98c8})];
 sparkPool=[];
 for(let k=0;k<28;k++){const sp=new THREE.Mesh(sparkGeo,sparkMats[k%3]);sp.visible=false;scene.add(sp);sparkPool.push({mesh:sp,life:0,vx:0,vy:0,vz:0})}
 sparkCursor=0;
+// Continuous inward spiral of starlight, visually pulled into the black hole.
+const starGeometry=new THREE.OctahedronGeometry(.042,0);
+const starColors=[0xffffff,0x92e7ff,0xffd88b,0xb9a2ff];
+swirlStars=[];
+for(let k=0;k<24;k++){
+const mat=new THREE.MeshBasicMaterial({color:starColors[k%starColors.length],transparent:true,opacity:.95,depthTest:false,depthWrite:false});
+const star=new THREE.Mesh(starGeometry,mat);star.renderOrder=105;holeGroup.add(star);
+swirlStars.push({mesh:star,phase:k/24,angle:k*2.399})
+}
 window.holeBurst=function(x,z,size){
 const count=5+Math.min(5,Math.round(size*2));
 for(let k=0;k<count;k++){const p=sparkPool[sparkCursor++%sparkPool.length],angle=(k/count)*Math.PI*2;
@@ -388,11 +397,13 @@ const direction=keyboard.lengthSq()>0?keyboard:stickDirection;
 stickSmoothed.lerp(direction,steering);
 if(direction.lengthSq()<.0001)stickSmoothed.set(0,0);
 if(dragging||keyboard.lengthSq()>0){
-const speed=matchMedia('(pointer:fine)').matches?7.8:11.8;
+const speed=matchMedia('(pointer:fine)').matches?11.8:13.4;
 portal.position.x=THREE.MathUtils.clamp(portal.position.x+stickSmoothed.x*speed*dt,-W/2+radius,W/2-radius);
 portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*dt,-D/2+radius,D/2-radius)
 }remaining-=dt;elapsed+=dt;if(remaining<=0){remaining=0;playing=false;showEnd(false,'TIME IS UP!','You collected '+score+' of '+goal+' treasures. Try again!')}updateHud()}
-if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.z+=dt*.6;ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);
+if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.z+=dt*.6;
+for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math.pow(1-t,.72);const a=star.angle+now*.0028+t*7.5;star.mesh.position.set(Math.cos(a)*r,.227+Math.sin(t*Math.PI)*.015,Math.sin(a)*r);const scale=Math.max(.12,(1-t)*1.5);star.mesh.scale.setScalar(scale);star.mesh.material.opacity=Math.min(1,(1-t)*1.5)}
+ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);
 for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*9);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(23-camera.position.y)*follow;camera.position.z+=(portal.position.z+28-camera.position.z)*follow;camera.lookAt(camera.position.x,0,camera.position.z-28);// Hide distant detailed architecture, keeping a small visual margin around the camera.
 // Skip expensive per-mesh rendering for buildings outside the playable viewport.
 for(const d of decor){const dx=d.position.x-portal.position.x,dz=d.position.z-portal.position.z;d.visible=Math.abs(dx)<34&&Math.abs(dz)<36}
