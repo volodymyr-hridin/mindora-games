@@ -232,6 +232,23 @@ toyPlant(g,w*.37,z,i)
 for(let k=0;k<2;k++){B(g,(k-.5)*.55,.25,z,.36,.43,.4,tokyoMat.wood);S(g,(k-.5)*.55,.55,z,.23,k%2?toyLeaf:toyLeaf2)}
 }
 }
+function toyLandmark(x,z,i){
+const g=group(x,z),kind=i%6,wall=toyWalls[kind],roof=[tokyoMat.red,tokyoMat.green,tokyoMat.blue,tokyoMat.tile,tokyoMat.wood,tokyoMat.red][kind],h=2.15+(kind%3)*.35,w=2.65,d=2.55;
+B(g,0,.05,0,3.05,.1,3.5,toySidewalk);toyShadow(g,0,0,1.2,1.1);
+B(g,0,h/2,0,w,h,d,wall);B(g,0,.2,0,w+.13,.32,d+.13,tokyoMat.cream);
+if(kind%2===0){const r=mesh(new THREE.ConeGeometry(1.87,.92,4),roof,g);r.position.y=h+.5;r.rotation.y=Math.PI/4}
+else{B(g,0,h+.08,0,w+.3,.22,d+.3,roof);B(g,-.5,h+.4,-.3,1.1,.58,1.2,tokyoMat.cream)}
+B(g,0,.74,d/2+.08,1.85,1.12,.08,kind%2?toyWarmWindow:toyWindow);
+B(g,0,.75,d/2+.15,.08,1.12,.08,tokyoMat.wood);
+B(g,0,1.48,d/2+.37,w+.24,.13,.7,roof);
+for(let k=0;k<7;k++)B(g,-1.1+k*.36,1.27,d/2+.7,.24,.31,.04,k%2?tokyoMat.cream:roof);
+const labels=['ラーメン','カフェ','寿司','本屋','花屋','東京'];
+const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.44),cachedTokyoSign(labels[kind],'#8a5368'));
+sign.position.set(0,1.8,d/2+.24);g.add(sign);
+for(const xx of [-.72,.72]){B(g,xx,1.98,d/2+.06,.43,.36,.08,toyWindow);B(g,xx,1.76,d/2+.12,.52,.07,.12,tokyoMat.cream)}
+toyPlant(g,-1.2,d/2+.52,i);toyPlant(g,1.2,d/2+.52,i+1);
+return addDecor(g)
+}
 function tokyoFacade(x,z,i){
 const g=group(x,z),height=3.5+(i%4)*.6,w=2.65+(i%3)*.32,depth=2.65;
 B(g,0,.035,0,3.15,.1,4.1,toySidewalk);
@@ -366,8 +383,7 @@ for(let bx=-20;bx<=20;bx+=10)for(let bz=-30;bz<=30;bz+=12){
 if(Math.hypot(bx,bz-11)<6.8)continue;
 const n=seed++;
 // A compact pair of shops frames each street, with varied heights and roofs.
-tokyoFacade(bx-1.65,bz,n*2);
-tokyoFacade(bx+1.65,bz,n*2+1);
+if(n%3===0){toyLandmark(bx-1.65,bz,n);toyLandmark(bx+1.65,bz,n+2)}else if(n%3===1){toyLandmark(bx-1.65,bz,n);tokyoFacade(bx+1.65,bz,n*2+1)}else{tokyoFacade(bx-1.65,bz,n*2);toyLandmark(bx+1.65,bz,n+3)}
 if(n%2===0)sakura(bx,bz-3.5,n);
 else toyStreetCorner(bx,bz-3.5,n);
 if(n%3===0)toyStreetCorner(bx,bz+3.4,n+1);
