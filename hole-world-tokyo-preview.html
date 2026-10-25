@@ -44,13 +44,13 @@ const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const di
 effectMat=new THREE.MeshBasicMaterial({color:0x73e5f3,transparent:true,opacity:.58,depthWrite:false});
 ripple=new THREE.Mesh(new THREE.TorusGeometry(1.19,.027,6,72),effectMat);
 ripple.rotation.x=-Math.PI/2;ripple.position.y=.215;ripple.renderOrder=103;effectMat.depthTest=false;holeGroup.add(ripple);
-const sparkGeo=new THREE.OctahedronGeometry(.085,0);
+const sparkGeo=new THREE.OctahedronGeometry(.12,0);
 const sparkMats=[new THREE.MeshBasicMaterial({color:0xffdf8c}),new THREE.MeshBasicMaterial({color:0x8ce9fa}),new THREE.MeshBasicMaterial({color:0xff98c8})];
 sparkPool=[];
 for(let k=0;k<28;k++){const sp=new THREE.Mesh(sparkGeo,sparkMats[k%3]);sp.visible=false;scene.add(sp);sparkPool.push({mesh:sp,life:0,vx:0,vy:0,vz:0})}
 sparkCursor=0;
 // Continuous inward spiral of starlight, visually pulled into the black hole.
-const starGeometry=new THREE.OctahedronGeometry(.042,0);
+const starGeometry=new THREE.OctahedronGeometry(.07,0);
 const starColors=[0xffffff,0x92e7ff,0xffd88b,0xb9a2ff];
 swirlStars=[];
 for(let k=0;k<24;k++){
@@ -67,7 +67,7 @@ p.vx=Math.cos(angle)*(1.2+Math.random()*1.5);
 p.vz=Math.sin(angle)*(1.2+Math.random()*1.5);p.vy=1.8+Math.random()*1.3}
 }
 resize();window.addEventListener('resize',resize);container.addEventListener('pointerdown',down);window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);container.addEventListener('touchstart',e=>{if(playing&&e.cancelable)e.preventDefault()},{passive:false});container.addEventListener('touchmove',e=>{if(playing&&e.cancelable)e.preventDefault()},{passive:false});document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){playing=false;showEnd(false,'Paused','Your adventure is waiting. Tap to resume.',true)}});requestAnimationFrame(frame)}
-function resize(){const w=innerWidth,h=innerHeight,aspect=w/h;const height=w>700?18:22,width=height*aspect;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();renderer.setSize(w,h)}
+function resize(){const w=innerWidth,h=innerHeight,aspect=w/h;const height=w>700?20:23,width=height*aspect;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();renderer.setSize(w,h)}
 const WORLDS=[
 ['Tokyo','Japan','neon'],['Delhi','India','market'],['Shanghai','China','skyline'],['Dhaka','Bangladesh','market'],['São Paulo','Brazil','tropical'],['Cairo','Egypt','desert'],['Mexico City','Mexico','fiesta'],['Beijing','China','skyline'],['Mumbai','India','market'],['Osaka','Japan','neon'],['New York','USA','skyline'],['Karachi','Pakistan','market'],['Chongqing','China','skyline'],['Istanbul','Türkiye','harbor'],['Buenos Aires','Argentina','fiesta'],['Lagos','Nigeria','tropical'],['Manila','Philippines','tropical'],['Kolkata','India','market'],['Kinshasa','DR Congo','tropical'],['Guangzhou','China','skyline'],['Paris','France','europe'],['London','UK','europe'],['Dubai','UAE','desert'],['Singapore','Singapore','tropical'],['Seoul','South Korea','neon'],['Valencia','Spain','harbor'],['Kyoto Village','Japan','village'],['Alpine Village','Switzerland','village'],['Tuscan Village','Italy','village'],['Carpathian Village','Ukraine','village'],['Provence Village','France','village'],['Andean Village','Peru','village'],['Dutch Countryside','Netherlands','village'],['English Farm','UK','village'],['Bavarian Village','Germany','village'],['Greek Island Village','Greece','village']];
 let worldIndex=-1,world=WORLDS[0],actors=[],landmark3d=null,landmarkRequest=0,tokyoMixer=null;
@@ -91,9 +91,9 @@ function buildWorld(){
 if(landmark3d){scene.remove(landmark3d);landmark3d=null}tokyoMixer=null;landmarkRequest++;
 nextWorld();actors=[];
 for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
-items=[];decor=[];particles=[];ground.material=world[2]==='desert'?mats.yellow:world[2]==='village'?mats.grass:level%2?mats.grass:mats.grass2;
+items=[];decor=[];particles=[];ground.material=world[0]==='Tokyo'?color('#b5cc91'):world[2]==='desert'?mats.yellow:world[2]==='village'?mats.grass:level%2?mats.grass:mats.grass2;
 const palette=[mats.pink,mats.orange,mats.yellow,mats.purple,mats.blue,mats.mint];
-const asphalt=color(world[2]==='village'?'#bfa87e':'#535e69'),pavement=color('#d9d2c3'),line=color('#fffae0'),glass=color('#bdefff'),roof=color('#f8798b'),door=color('#4a547e'),leaf=color('#51c985'),darkRoof=color('#665cc7');
+const asphalt=color(world[2]==='village'?'#bfa87e':'#646773'),pavement=color('#eadcc8'),line=color('#fff8e9'),glass=color('#bdefff'),roof=color('#f8798b'),door=color('#4a547e'),leaf=color('#51c985'),darkRoof=color('#665cc7');
 function B(parent,x,y,z,w,h,d,mat){return makeBox(x,y,z,w,h,d,mat,parent)}
 function C(parent,x,y,z,r,h,mat){const o=mesh(cylGeo,mat,parent);o.position.set(x,y,z);o.scale.set(r,h,r);return o}
 function S(parent,x,y,z,r,mat){return ball(x,y,z,r,mat,parent)}
@@ -201,14 +201,17 @@ wood:color('#886959'),cream:color('#eee3d2'),glass:color('#80b0b9'),
 red:color('#b94e53'),blue:color('#42758a'),green:color('#66836f')
 };
 const tokyoSignCache=new Map();
+const toyWalls=['#f3d9b5','#d4e3e1','#edc9bb','#e4d9ef','#cbdde9','#f0dfb4'].map(h=>color(h));
 function cachedTokyoSign(word,bg){
 const key=word+bg;if(!tokyoSignCache.has(key))tokyoSignCache.set(key,makeSign(word,bg));
 return tokyoSignCache.get(key)
 }
 function tokyoFacade(x,z,i){
-const g=group(x,z),height=4.2+(i%5)*.8,w=2.65+(i%3)*.32,depth=2.65;
-const wall=facadeTexture(i),roof=tokyoMat.roof,frame=tokyoMat.frame;
+const g=group(x,z),height=3.5+(i%4)*.6,w=2.65+(i%3)*.32,depth=2.65;
+const wall=toyWalls[i%toyWalls.length],roof=tokyoMat.roof,frame=tokyoMat.frame;
 B(g,0,height/2,0,w,height,depth,wall);
+B(g,0,.18,0,w+.18,.35,depth+.18,tokyoMat.cream);
+for(let y=1.45;y<height;y+=1.35)B(g,0,y,0,w+.1,.1,depth+.1,tokyoMat.cream);
 B(g,0,.19,depth/2+.2,w+.3,.38,.7,tokyoMat.cream);
 // Shop entrance: recessed-looking double glass doors, awning, noren panels.
 B(g,0,.69,depth/2+.09,w*.73,1.15,.09,tokyoMat.glass);
@@ -289,21 +292,15 @@ const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.ge
 // Layered sakura crowns, forked branches and irregular blossom clusters.
 const sakuraPetals=['#f6c3d5','#ffe0e5','#eeb3cd','#f8d8d7'].map(h=>color(h));
 function sakura(x,z,i){
-const g=group(x,z),branch=color('#7d6258');
-C(g,0,.93,0,.16,1.85,branch);
-for(let k=0;k<5;k++){
-const a=k*2.399,r=.55+(k%2)*.15;
-const bx=Math.cos(a)*r,bz=Math.sin(a)*r;
-const stem=C(g,bx*.52,1.87,bz*.52,.075,.85,branch);
-stem.rotation.z=-Math.cos(a)*.55;stem.rotation.x=Math.sin(a)*.5;
-for(let j=0;j<3;j++){
-const theta=j*2.1+k;
-const blossom=mesh(new THREE.IcosahedronGeometry(.45+(j%2)*.1,1),sakuraPetals[(i+k+j)%4],g);
-blossom.position.set(bx+Math.cos(theta)*.33,2.35+(j%2)*.28,bz+Math.sin(theta)*.31);
-blossom.scale.set(1.12,.75,1.02)
+const g=group(x,z),trunk=color('#98765e');
+C(g,0,.88,0,.18,1.76,trunk);
+for(let k=0;k<8;k++){
+const angle=k*2.399,rr=.48+(k%3)*.14;
+const blossom=mesh(new THREE.SphereGeometry(.52,9,7),sakuraPetals[(i+k)%4],g);
+blossom.position.set(Math.cos(angle)*rr,2.1+(k%3)*.19,Math.sin(angle)*rr);
+blossom.scale.set(1.05,.82,1.05)
 }
-}
-addDecor(g)
+S(g,0,2.44,0,.55,sakuraPetals[i%4]);addDecor(g)
 }
 function crossing(x,z){const g=group(x,z);for(let j=0;j<6;j++)B(g,-1.5+j*.6,.092,0,.34,.025,2.8,mats.white);addDecor(g)}
 // Tokyo street-level details: red torii gates, glowing lanterns and vending machines.
