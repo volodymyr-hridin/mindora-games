@@ -36,10 +36,10 @@ const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.SphereGeometry(1,1
 function mesh(geo,mat,parent=scene){const o=new THREE.Mesh(geo,mat);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o}
 function makeBox(x,y,z,sx,sy,sz,mat,parent=scene){const m=mesh(boxGeo,mat,parent);m.position.set(x,y,z);m.scale.set(sx,sy,sz);return m}
 function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.position.set(x,y,z);m.scale.setScalar(r);return m}
-function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b9dce5');scene.fog=new THREE.Fog('#b9dce5',60,135);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(10,17,34);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);
+function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b9dce5');scene.fog=new THREE.Fog('#b9dce5',60,135);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(10,17,34);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.localClippingEnabled=true;renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xfff6e9,0x718c8c,2.1));const sun=new THREE.DirectionalLight(0xffd4a5,2.7);sun.position.set(-9,23,12);sun.castShadow=false;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,mats.water);ocean.receiveShadow=false;ground=makeBox(0,-.45,0,W,.8,D,mats.grass);ground.receiveShadow=true;makeBox(0,-.89,0,W+.3,.18,D+.3,mats.edge);
-const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=.19;disk.renderOrder=100;disk.material.depthTest=false;disk.material.depthWrite=false;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.205;ring.renderOrder=102;ring.material.depthTest=false;ring.material.depthWrite=false;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.208;inner.renderOrder=101;inner.material.depthTest=false;inner.material.depthWrite=false;shadow=holeGroup;holeGroup.position.set(0,.04,11);
+const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=.19;disk.renderOrder=0;disk.material.depthTest=true;disk.material.depthWrite=true;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.205;ring.renderOrder=2;ring.material.depthTest=true;ring.material.depthWrite=false;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.208;inner.renderOrder=1;inner.material.depthTest=true;inner.material.depthWrite=false;shadow=holeGroup;holeGroup.position.set(0,.04,11);
 // Lightweight portal effects: pulsing energy rings and collectible sparkles.
 effectMat=new THREE.MeshBasicMaterial({color:0x73e5f3,transparent:true,opacity:.58,depthWrite:false});
 ripple=new THREE.Mesh(new THREE.TorusGeometry(1.19,.027,6,72),effectMat);
@@ -666,7 +666,17 @@ function collect(o){
 o.userData.collected=true;o.userData.fall=0;
 o.userData.startX=o.position.x;o.userData.startZ=o.position.z;
 o.userData.startY=o.position.y;
+o.userData.targetX=portal.position.x;o.userData.targetZ=portal.position.z;
 o.userData.baseScale=o.scale.clone();
+// Clip submerged geometry at the mouth of the hole, instead of scaling it away.
+// Clone only this object's materials so neighboring collectibles remain unaffected.
+const lipY=portal.position.y+.19;
+const clipPlane=new THREE.Plane(new THREE.Vector3(0,1,0),-lipY);
+o.traverse(child=>{if(!child.isMesh)return;
+const cloneMat=m=>{const copy=m.clone();copy.clippingPlanes=[clipPlane];copy.clipShadows=true;return copy};
+child.material=Array.isArray(child.material)?child.material.map(cloneMat):cloneMat(child.material);
+child.renderOrder=3;
+});
 window.holeBurst?.(o.position.x,o.position.z,o.userData.size);
 }
 function finishCollect(o){
@@ -706,16 +716,18 @@ for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.
 // Skip expensive per-mesh rendering for buildings outside the playable viewport.
 // Keep all scenery visible while traversing the city: no abrupt pop-in or disappearing blocks.
 for(const o of items){if(o.userData.collected){
-const u=o.userData;u.fall=Math.min(1,u.fall+dt*1.12);
-const t=u.fall,ease=t*t*(3-2*t);
-// First pull toward the hole, then tip and sink below the ground plane.
-o.position.x=u.startX+(portal.position.x-u.startX)*ease;
-o.position.z=u.startZ+(portal.position.z-u.startZ)*ease;
-o.position.y=u.startY-(.35+u.size*2.3)*ease;
-o.rotation.x+=dt*2.6;o.rotation.z+=dt*1.9;
-const shrink=Math.max(.005,1-Math.pow(Math.max(0,(t-.45)/.55),2)*.99);
-o.scale.copy(u.baseScale).multiplyScalar(shrink);
-if(t>=1){finishCollect(o);scene.remove(o)}
+const u=o.userData;u.fall+=dt;
+// Keep the object at full size while gravity accelerates it through the opening.
+const t=u.fall;
+const pull=Math.min(1,t/.24);
+const ease=pull*pull*(3-2*pull);
+o.position.x=u.startX+(u.targetX-u.startX)*ease;
+o.position.z=u.startZ+(u.targetZ-u.startZ)*ease;
+const drop=Math.max(0,t-.18);
+o.position.y=u.startY-12*drop*drop;
+o.rotation.x+=dt*1.6;o.rotation.z+=dt*1.15;
+o.scale.copy(u.baseScale);
+if(t>=1.22){finishCollect(o);scene.remove(o);o.traverse(child=>{if(child.isMesh){const mats=Array.isArray(child.material)?child.material:[child.material];mats.forEach(m=>m.dispose())}})}
 continue}if(!playing)continue;const d=Math.hypot(o.position.x-portal.position.x,o.position.z-portal.position.z);if(d<radius*.92&&o.userData.size<radius*.85)collect(o)}
 renderer.render(scene,camera)}
 function showEnd(won,title,description,paused=false){$('overlay').classList.remove('hidden');$('face').textContent=won?'🏆🌈':paused?'⏸️🌀':'⏰🍭';$('heading').textContent=title;$('description').textContent=description;$('play').textContent=won?'NEXT LEVEL ▶':paused?'RESUME ▶':'TRY AGAIN ▶';if(!paused){track('game_complete',{score,level,success:won,duration_seconds:Math.round(elapsed)});if(won){try{const key='mindora-hole-world-v1',v=JSON.parse(localStorage.getItem(key)||'{}');v.best=Math.max(v.best||0,score);v.level=Math.max(v.level||1,level+1);v.wins=(v.wins||0)+1;localStorage.setItem(key,JSON.stringify(v))}catch{}window.MindoraQuest?.complete()}}}
