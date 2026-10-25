@@ -112,31 +112,40 @@ function tree(x,z,i){const g=group(x,z);C(g,0,.63,0,.19,1.25,mats.wood);for(let 
 // rubber tyres, chrome rims, lights, licence plates and side mirrors.
 const carPaint=['#e6e4d9','#bb5050','#4c7e91','#d4b46a','#748a77','#696d7b'].map(h=>color(h));
 const tyreMat=color('#24272c'),chromeMat=color('#c4ccd0'),windowMat=color('#526e7c'),lampMat=color('#f7dfb0'),rearMat=color('#b74a46');
+// Purpose-built miniature traffic with smooth rounded silhouettes and readable details.
+const toyCarBodyGeo=new THREE.SphereGeometry(1,12,8);
+const toyCarGlass=new THREE.MeshStandardMaterial({color:0x78bbd3,metalness:.1,roughness:.22});
+const toyCarRubber=new THREE.MeshStandardMaterial({color:0x242c37,roughness:.88});
+const toyCarChrome=new THREE.MeshStandardMaterial({color:0xf3e9d4,metalness:.5,roughness:.35});
+const toyCarHeadlight=new THREE.MeshStandardMaterial({color:0xfff4b8,emissive:0xffb64d,emissiveIntensity:.65});
 function car(x,z,i){
-const g=group(x,z),paint=carPaint[i%carPaint.length],van=i%4===0;
-toyShadow(g,0,0,1.05,.7);
-const length=van?1.85:1.5,bodyH=van?.65:.48;
-B(g,0,.39,0,length,bodyH,.92,paint);
-for(const xx of [-length*.43,length*.43])for(const zz of [-.35,.35])S(g,xx,.39,zz,.17,paint);
-B(g,van?-.06:-.12,van?.91:.78,0,van?1.22:.84,van?.76:.45,.85,paint);
-B(g,van?-.06:-.13,van?1.02:.88,.437,van?.99:.7,van?.49:.3,.025,windowMat);
-B(g,van?-.06:-.13,van?1.02:.88,-.437,van?.99:.7,van?.49:.3,.025,windowMat);
-B(g,van?-.64:-.49,van?1.01:.89,0,.04,van?.48:.29,.7,windowMat);
-B(g,van?.55:.38,van?1.01:.89,0,.04,van?.48:.29,.7,windowMat);
-for(const xx of [-length*.32,length*.32])for(const zz of [-.48,.48]){
-const wheel=mesh(new THREE.CylinderGeometry(.235,.235,.12,16),tyreMat,g);
-wheel.rotation.x=Math.PI/2;wheel.position.set(xx,.235,zz);
-const hub=mesh(new THREE.CylinderGeometry(.105,.105,.125,12),chromeMat,g);
-hub.rotation.x=Math.PI/2;hub.position.set(xx,.235,zz)
+const g=group(x,z),van=i%5===0,bus=i%11===0,paint=carPaint[i%carPaint.length];
+const length=bus?2.25:van?1.85:1.55;
+toyShadow(g,0,0,length*.65,.57);
+const shell=mesh(toyCarBodyGeo,paint,g);
+shell.position.set(0,.53,0);shell.scale.set(length*.54,.36,.53);
+const cabin=mesh(toyCarBodyGeo,van||bus?paint:toyCarGlass,g);
+cabin.position.set(van||bus?-.12:-.13,van||bus?.94:.87,0);
+cabin.scale.set(length*.34,van||bus?.42:.29,.46);
+if(van||bus){
+B(g,0,1.23,0,length*.71,.12,.78,paint);
+for(const zz of [-.468,.468])B(g,-.15,1.01,zz,length*.55,.25,.035,toyCarGlass);
+}else{
+B(g,-.13,1.04,0,length*.49,.065,.72,paint);
 }
-for(const zz of [-.3,.3]){
-B(g,length/2+.025,.42,zz,.055,.15,.19,lampMat);
-B(g,-length/2-.025,.42,zz,.055,.14,.2,rearMat)
+for(const xx of [-length*.32,length*.32])for(const zz of [-.49,.49]){
+const wheel=mesh(new THREE.CylinderGeometry(.23,.23,.15,12),toyCarRubber,g);
+wheel.rotation.x=Math.PI/2;wheel.position.set(xx,.25,zz);
+const hub=mesh(new THREE.CylinderGeometry(.105,.105,.17,10),toyCarChrome,g);
+hub.rotation.x=Math.PI/2;hub.position.set(xx,.25,zz)
 }
-B(g,length/2+.032,.28,0,.035,.13,.32,chromeMat);
-B(g,-length/2-.032,.28,0,.035,.13,.32,chromeMat);
-for(const zz of [-.5,.5])B(g,.31,.8,zz,.18,.11,.07,paint);
-if(van){B(g,0,1.32,0,.75,.09,.73,chromeMat);B(g,-.4,.68,.48,.52,.045,.035,chromeMat)}
+for(const zz of [-.31,.31]){
+const lamp=mesh(toyCarBodyGeo,toyCarHeadlight,g);lamp.position.set(length*.53,.49,zz);lamp.scale.set(.07,.1,.13);
+const tail=mesh(toyCarBodyGeo,rearMat,g);tail.position.set(-length*.53,.49,zz);tail.scale.set(.07,.09,.12)
+}
+B(g,length*.53,.3,0,.06,.13,.65,toyCarChrome);
+B(g,-length*.53,.3,0,.06,.13,.65,toyCarChrome);
+if(bus){B(g,0,.5,.54,1.4,.12,.05,toyCarChrome);B(g,0,.5,-.54,1.4,.12,.05,toyCarChrome)}
 g.rotation.y=i%2?Math.PI/2:0;
 return addItem(g,1.35)
 }
@@ -469,8 +478,8 @@ for(let bx=-20;bx<=20;bx+=10)for(let bz=-30;bz<=30;bz+=12){
 if(Math.hypot(bx,bz-11)<6.8)continue;
 const n=seed++;
 // A compact pair of shops frames each street, with varied heights and roofs.
-toyLandmark(bx-1.65,bz,n*2);toyLandmark(bx+1.65,bz,n*2+3);
-if(n%2===0)sakura(bx,bz-3.5,n);
+if(n%5===0){toyLandmark(bx-1.65,bz,n*2);sakura(bx+1.65,bz,n)}else if(n%5===1){toyLandmark(bx-1.65,bz,n*2);toyLandmark(bx+1.65,bz,n*2+3)}else if(n%5===2){toyLandmark(bx-1.65,bz,n*2);toyLandmark(bx+1.65,bz,n*2+5)}else if(n%5===3){toyLandmark(bx-1.65,bz,n*2+4);toyLandmark(bx+1.65,bz,n*2+1)}else{toyLandmark(bx-1.65,bz,n*2+2);toyLandmark(bx+1.65,bz,n*2+5)}
+if(n%2===0&&n%5!==0)sakura(bx,bz-3.5,n);
 else toyStreetCorner(bx,bz-3.5,n);
 if(n%3===0)toyStreetCorner(bx,bz+3.4,n+1);
 }
