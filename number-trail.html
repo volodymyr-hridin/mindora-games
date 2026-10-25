@@ -60,14 +60,14 @@ return values.some((v,j)=>j!==i&&v===n&&(Math.floor(j/9)===r||j%9===c||(Math.flo
 }
 function render(){
 const counts=Array(10).fill(0);
-for(const n of values)if(Number.isInteger(n)&&n>=1&&n<=9)counts[n]++;
+for(let i=0;i<values.length;i++){const n=values[i];if(Number.isInteger(n)&&n>=1&&n<=9&&n===solution[i])counts[n]++}
 for(const b of $('numpad').querySelectorAll('.digit')){
-const n=Number(b.dataset.number),complete=counts[n]>=9;
+const n=Number(b.dataset.number),complete=counts[n]===9;
 b.hidden=complete;b.disabled=complete;b.classList.toggle('active',activeDigit===n&&!complete);
 b.setAttribute('aria-pressed',String(activeDigit===n&&!complete));
 b.setAttribute('aria-label',complete?'Number '+n+' complete':'Number '+n+', '+counts[n]+' of 9 placed');
 }
-if(activeDigit&&counts[activeDigit]>=9)activeDigit=0;
+if(activeDigit&&counts[activeDigit]===9)activeDigit=0;
 $('hint').textContent='Hint ('+hintsLeft+' left)';$('hint').disabled=hintsLeft<=0||finished;
 const board=$('board');board.replaceChildren();
 const selectedNumber=activeDigit||(selected>=0?values[selected]:0);
@@ -81,7 +81,7 @@ b.className='cell'+(puzzle[i]?' given':'')+(peer?' peer':'')+(n&&selectedNumber=
 b.setAttribute('role','gridcell');b.setAttribute('aria-label','Row '+(r+1)+' column '+(c+1)+(n?' value '+n:' empty')+(bad?' conflict':''));
 if(n)b.textContent=n;
 else if(notes[i]?.length){const g=document.createElement('span');g.className='notes';for(let k=1;k<=9;k++){const t=document.createElement('span');t.textContent=notes[i].includes(k)?k:'';g.appendChild(t)}b.appendChild(g)}
-b.onclick=()=>{selected=i;if(activeDigit&&!puzzle[i]&&!finished&&!timedOut)enter(activeDigit);else render()};
+b.onclick=()=>{selected=i;activeDigit=values[i]||0;render()};
 board.appendChild(b)
 });
 $('filled').textContent=values.filter(Boolean).length+' / 81';
@@ -89,10 +89,10 @@ $('clock').textContent=timeLimit?timeText(Math.max(0,timeLimit-seconds))+' left'
 $('best').textContent='Best: '+(bests[level]?timeText(bests[level]):'-');
 document.querySelectorAll('.level').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===level)))
 }
-function enter(n){if(n>=1&&n<=9&&values.filter(v=>v===n).length>=9&&values[selected]!==n&&!noteMode){$('status').textContent='All nine '+n+'s are already on the board.';return}if(finished){$('status').textContent='Puzzle solved! Start a new game to play again.';return}if(timedOut){$('status').textContent='Time is up. Start a new puzzle to continue.';return}if(selected<0){$('status').textContent='Select an empty square first.';return}if(puzzle[selected]){$('status').textContent='This is a fixed clue.';return}startClock();if(noteMode&&n){const a=new Set(notes[selected]||[]);a.has(n)?a.delete(n):a.add(n);notes[selected]=[...a]}else{values[selected]=n;delete notes[selected]}const errors=values.reduce((total,v,i)=>total+(v&&!puzzle[i]&&v!==solution[i]?1:0),0);$('status').textContent=errors?'⚠ Incorrect entry highlighted in red.':'Keep going!';save();render();if(isSolved())finish()}
+function enter(n){if(n>=1&&n<=9&&solution.reduce((total,v,i)=>total+(v===n&&values[i]===n?1:0),0)===9&&values[selected]!==n&&!noteMode){$('status').textContent='All nine '+n+'s are correctly placed.';return}if(finished){$('status').textContent='Puzzle solved! Start a new game to play again.';return}if(timedOut){$('status').textContent='Time is up. Start a new puzzle to continue.';return}if(selected<0){$('status').textContent='Select an empty square first.';return}if(puzzle[selected]){$('status').textContent='This is a fixed clue.';return}startClock();if(noteMode&&n){const a=new Set(notes[selected]||[]);a.has(n)?a.delete(n):a.add(n);notes[selected]=[...a]}else{values[selected]=n;delete notes[selected]}const errors=values.reduce((total,v,i)=>total+(v&&!puzzle[i]&&v!==solution[i]?1:0),0);$('status').textContent=errors?'⚠ Incorrect entry highlighted in red.':'Keep going!';save();render();if(isSolved())finish()}
 function isSolved(){return values.every(v=>Number.isInteger(v)&&v>=1&&v<=9)&&values.every((v,i)=>v===solution[i])&&[...Array(9)].every((_,r)=>new Set(values.slice(r*9,r*9+9)).size===9&&new Set([...Array(9)].map((_,c)=>values[c*9+r])).size===9)&&[0,3,6].every(br=>[0,3,6].every(bc=>new Set([...Array(9)].map((_,k)=>values[(br+Math.floor(k/3))*9+bc+k%3])).size===9))}
 function finish(){if(finished||!isSolved())return;finished=true;window.MindoraQuest?.complete();clearInterval(ticker);ticker=null;started=false;const best=bests[level];if(!best||seconds<best){bests[level]=seconds;try{localStorage.setItem('mindora-sudoku-bests',JSON.stringify(bests))}catch(e){}}try{localStorage.removeItem(key())}catch(e){}track('game_complete',{difficulty:level,duration_seconds:seconds});track('game_win',{difficulty:level,duration_seconds:seconds});$('result').classList.remove('hidden');$('score').textContent=timeText(seconds);$('summary').textContent='You solved '+level+' Sudoku!';$('status').textContent='All 81 cells correct!';render()}
-for(let n=1;n<=9;n++){const b=document.createElement('button');b.className='digit';b.dataset.number=n;b.textContent=n;b.onclick=()=>{activeDigit=activeDigit===n?0:n;if(selected>=0&&!puzzle[selected]&&activeDigit)enter(activeDigit);else render()};$('numpad').appendChild(b)}
+for(let n=1;n<=9;n++){const b=document.createElement('button');b.className='digit';b.dataset.number=n;b.textContent=n;b.onclick=()=>{activeDigit=n;if(selected>=0&&!puzzle[selected]&&!finished&&!timedOut)enter(n);else render()};$('numpad').appendChild(b)}
 $('erase').onclick=()=>enter(0);$('notes').onclick=()=>{noteMode=!noteMode;$('notes').textContent=noteMode?'✎ Notes on':'✎ Notes off';$('notes').setAttribute('aria-pressed',String(noteMode))};
 $('hint').onclick=()=>{if(finished||timedOut)return;if(hintsLeft<=0){$('status').textContent='No hints left in this puzzle.';return}if(selected<0||puzzle[selected]){$('status').textContent='Choose an editable square for a hint.';return}if(values[selected]===solution[selected]){$('status').textContent='This square is already correct. Choose another.';return}hintsLeft--;track('game_hint',{difficulty:level,hints_remaining:hintsLeft});noteMode=false;$('notes').textContent='✎ Notes off';$('notes').setAttribute('aria-pressed','false');enter(solution[selected]);if(!finished){$('status').textContent='Hint used. '+hintsLeft+' remaining.';save();render()}};
 $('check').onclick=()=>{let errors=0;[...$('board').children].forEach((b,i)=>{if(values[i]&&values[i]!==solution[i]){b.classList.add('wrong');errors++}});$('status').textContent=errors?errors+' incorrect '+(errors===1?'entry':'entries')+' highlighted.':'No errors found so far!'};
