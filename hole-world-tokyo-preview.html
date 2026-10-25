@@ -117,6 +117,7 @@ const g=group(x,z),paint=carPaint[i%carPaint.length],van=i%4===0;
 toyShadow(g,0,0,1.05,.7);
 const length=van?1.85:1.5,bodyH=van?.65:.48;
 B(g,0,.39,0,length,bodyH,.92,paint);
+for(const xx of [-length*.43,length*.43])for(const zz of [-.35,.35])S(g,xx,.39,zz,.17,paint);
 B(g,van?-.06:-.12,van?.91:.78,0,van?1.22:.84,van?.76:.45,.85,paint);
 B(g,van?-.06:-.13,van?1.02:.88,.437,van?.99:.7,van?.49:.3,.025,windowMat);
 B(g,van?-.06:-.13,van?1.02:.88,-.437,van?.99:.7,van?.49:.3,.025,windowMat);
@@ -210,9 +211,11 @@ return tokyoSignCache.get(key)
 // Reusable toy materials and soft contact shadows (no costly shadow maps).
 const toySidewalk=color('#e9dcc8'),toyCurb=color('#d6c3ab'),toyPaver=color('#f7eddb');
 const toyPlanter=color('#c88e71'),toyLeaf=color('#76ac67'),toyLeaf2=color('#a6c974');
+const toyWindow=new THREE.MeshStandardMaterial({color:0xa8d8e0,emissive:0x447e8e,emissiveIntensity:.23,roughness:.27});
+const toyWarmWindow=new THREE.MeshStandardMaterial({color:0xffe4ac,emissive:0xffb955,emissiveIntensity:.4,roughness:.35});
 const toyShadowMat=new THREE.MeshBasicMaterial({color:0x2e3441,transparent:true,opacity:.17,depthWrite:false});
 const toyShadowGeo=new THREE.CircleGeometry(1,20);
-function toyShadow(g,x,z,w,d){const m=mesh(toyShadowGeo,toyShadowMat,g);m.rotation.x=-Math.PI/2;m.position.set(x,.078,z);m.scale.set(w,d,1)}
+function toyShadow(g,x,z,w,d){const m=mesh(toyShadowGeo,toyShadowMat,g);m.rotation.x=-Math.PI/2;m.position.set(x,.17,z);m.scale.set(w,d,1)}
 function toyPlant(g,x,z,i){
 B(g,x,.22,z,.43,.38,.43,toyPlanter);
 S(g,x,.53,z,.31,i%2?toyLeaf:toyLeaf2);
@@ -240,7 +243,7 @@ B(g,0,.18,0,w+.18,.35,depth+.18,tokyoMat.cream);
 for(let y=1.45;y<height;y+=1.35)B(g,0,y,0,w+.1,.1,depth+.1,tokyoMat.cream);
 B(g,0,.19,depth/2+.2,w+.3,.38,.7,tokyoMat.cream);
 // Shop entrance: recessed-looking double glass doors, awning, noren panels.
-B(g,0,.69,depth/2+.09,w*.73,1.15,.09,tokyoMat.glass);
+B(g,0,.69,depth/2+.09,w*.73,1.15,.09,i%3===0?toyWarmWindow:toyWindow);
 B(g,0,.69,depth/2+.15,.085,1.15,.1,frame);
 for(const side of [-1,1]){
 B(g,side*w*.37,.68,depth/2+.14,.12,1.26,.15,frame);
@@ -256,13 +259,13 @@ for(let floor=0;floor<Math.floor((height-1.5)/.9);floor++){
 const y=2.03+floor*.88;
 for(const side of [-1,1]){
 const xx=side*w*.245;
-B(g,xx,y,depth/2+.065,.62,.57,.09,tokyoMat.glass);
+B(g,xx,y,depth/2+.065,.62,.57,.09,(floor+i)%4===0?toyWarmWindow:toyWindow);
 B(g,xx,y,depth/2+.12,.055,.62,.08,frame);
 B(g,xx,y+.3,depth/2+.12,.73,.075,.13,frame);
 B(g,xx,y-.3,depth/2+.15,.76,.095,.19,tokyoMat.cream);
 }
 // Side facade has windows visible from the camera's oblique view.
-B(g,w/2+.06,y,0,.08,.55,.78,tokyoMat.glass);
+B(g,w/2+.06,y,0,.08,.55,.78,(floor+i)%4===0?toyWarmWindow:toyWindow);
 B(g,w/2+.11,y,0,.09,.58,.055,frame);
 if(floor%2===0){
 const balconyY=y-.39;
@@ -334,6 +337,22 @@ function crossing(x,z){const g=group(x,z);for(let j=0;j<6;j++)B(g,-1.5+j*.6,.092
 // Tokyo street-level details: red torii gates, glowing lanterns and vending machines.
 const vermilion=color('#e84c45'),lanternGlow=color('#ffe1a0'),vendingBlue=color('#2b8ac6');
 function toriiGate(x,z){const g=group(x,z);for(const xx of [-1.05,1.05])C(g,xx,1.45,0,.15,2.9,vermilion);B(g,0,2.85,0,2.95,.3,.35,vermilion);B(g,0,2.45,0,2.6,.18,.25,mats.dark);B(g,0,3.08,0,3.15,.1,.42,mats.dark);addDecor(g)}
+function toyStreetCorner(x,z,i){
+const g=group(x,z),post=color('#455465'),lamp=color('#ffe2a5'),bench=color('#c49a6d');
+if(i%3===0){
+C(g,0,1.2,0,.065,2.4,post);S(g,0,2.48,0,.21,lamp);
+C(g,0,2.26,0,.25,.12,post);toyPlant(g,.56,.24,i)
+}else if(i%3===1){
+B(g,0,.42,0,1.3,.14,.43,bench);
+for(const xx of [-.48,.48])B(g,xx,.23,0,.11,.39,.37,post);
+B(g,0,.74,-.19,1.3,.55,.09,bench);toyPlant(g,1.05,0,i)
+}else{
+C(g,0,1.02,0,.075,2.05,post);B(g,0,2.02,0,.39,.8,.29,post);
+for(let k=0;k<3;k++)S(g,0,2.27-k*.24,.17,.105,k===0?mats.pink:k===1?mats.yellow:toyLeaf);
+B(g,.5,.18,.45,.4,.34,.4,toyPlanter);S(g,.5,.48,.45,.3,toyLeaf)
+}
+addDecor(g)
+}
 function vendingMachine(x,z,i){const g=group(x,z);B(g,0,1,0,1.15,2,.82,i%2?vendingBlue:vermilion);B(g,0,1.26,.43,.88,1.05,.06,mats.white);for(let row=0;row<3;row++)for(let col=0;col<4;col++)S(g,-.3+col*.2,1.62-row*.3,.48,.07,palette[(row+col+i)%6]);B(g,.31,.54,.46,.16,.24,.04,mats.dark);B(g,0,.23,.46,.65,.13,.04,mats.dark);addDecor(g)}
 function lanternStreet(x,z){const g=group(x,z);C(g,0,1.35,0,.075,2.7,mats.dark);B(g,.42,2.53,0,.84,.075,.075,mats.dark);for(const dx of [.18,.68]){const l=mesh(new THREE.CylinderGeometry(.2,.2,.42,10),lanternGlow,g);l.position.set(dx,2.18,0);C(g,dx,2.44,0,.21,.05,vermilion);C(g,dx,1.93,0,.21,.05,vermilion)}addDecor(g)}
 // Toy road infrastructure: subtle raised pavement edges and physical lane dividers.
@@ -343,7 +362,7 @@ for(let z=-36;z<=36;z+=12){const g=group(0,z);B(g,0,.027,0,W-3,.07,3.55,asphalt)
 let seed=0;
 for(let x=-29;x<=29;x+=5.1)for(let z=-42;z<=42;z+=5.3){if(Math.hypot(x,z-11)<6)continue;const onRoad=Math.abs(((x+25+5)%10)-5)<2.8||Math.abs(((z+36+6)%12)-6)<2.5;if(onRoad)continue;const idx=seed++;const px=x+(Math.random()-.5)*.65,pz=z+(Math.random()-.5)*.65;
 if(world[2]==='village'){if(idx%3===0)house(px,pz,idx);else if(idx%4===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else if(idx%5===0)house(px,pz,idx);else tree(px,pz,idx)}else if(world[0]==='Tokyo'){if(idx%8===0)sakura(px,pz,idx);else tokyoFacade(px,pz,idx)}else if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}else building(px,pz,idx)}
-if(world[0]==='Tokyo'){for(let j=0;j<24;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}}
+if(world[0]==='Tokyo'){for(let j=0;j<24;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}for(let j=0;j<36;j++){const x=-22+(j%6)*8,z=-34+Math.floor(j/6)*12;if(Math.hypot(x,z-11)>8)toyStreetCorner(x,z,j)}}
 for(let i=0;i<95;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<3.5)continue;if(i%3===0)car(x,z,i);else treasure(x,z,i)}
 for(let i=0;i<40;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<5)continue;const g=group(x,z);C(g,0,.2,0,.06,.4,mats.mint);for(let k=0;k<5;k++)S(g,Math.cos(k*1.257)*.17,.45,Math.sin(k*1.257)*.17,.12,palette[(i+k)%6]);S(g,0,.45,0,.1,mats.yellow);addDecor(g)}
 
