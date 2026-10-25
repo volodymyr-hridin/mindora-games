@@ -459,17 +459,24 @@ function makeSign(word,bg){
 const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,256,128);ctx.strokeStyle='#ffffff';ctx.lineWidth=8;ctx.strokeRect(8,8,240,112);ctx.fillStyle='#fff';ctx.font='bold 47px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(word,128,64);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return new THREE.MeshBasicMaterial({map:t,side:THREE.DoubleSide})}
 // Layered sakura crowns, forked branches and irregular blossom clusters.
 const sakuraPetals=['#f6c3d5','#ffe0e5','#eeb3cd','#f8d8d7'].map(h=>color(h));
+// Sculpted cherry tree: tapering trunk, branches and clustered blossom crowns.
+const sakuraTrunkGeo=new THREE.CylinderGeometry(.105,.24,1.7,8);
+const sakuraBlossomGeo=new THREE.IcosahedronGeometry(.44,1);
 function sakura(x,z,i){
-const g=group(x,z),trunk=color('#98765e');
-toyShadow(g,0,0,.8,.8);
-C(g,0,.88,0,.18,1.76,trunk);
-for(let k=0;k<8;k++){
-const angle=k*2.399,rr=.48+(k%3)*.14;
-const blossom=mesh(new THREE.SphereGeometry(.52,9,7),sakuraPetals[(i+k)%4],g);
-blossom.position.set(Math.cos(angle)*rr,2.1+(k%3)*.19,Math.sin(angle)*rr);
-blossom.scale.set(1.05,.82,1.05)
+const g=group(x,z),wood=artMat.timber;toyShadow(g,0,0,.85,.85);
+const trunk=mesh(sakuraTrunkGeo,wood,g);trunk.position.y=.88;
+for(let k=0;k<5;k++){
+const a=k*Math.PI*2/5+.35,branch=mesh(new THREE.CylinderGeometry(.065,.12,1.12,6),wood,g);
+branch.position.set(Math.cos(a)*.26,1.69,Math.sin(a)*.26);
+branch.rotation.z=Math.cos(a)*-.55;branch.rotation.x=Math.sin(a)*.55;
+for(let j=0;j<3;j++){
+const ang=a+j*2.1,blossom=mesh(sakuraBlossomGeo,sakuraPetals[(i+k+j)%4],g);
+blossom.position.set(Math.cos(a)*.55+Math.cos(ang)*.24,2.1+j*.16,Math.sin(a)*.55+Math.sin(ang)*.23);
+blossom.scale.set(.95,.82,.95)
 }
-S(g,0,2.44,0,.55,sakuraPetals[i%4]);addDecor(g)
+}
+const crown=mesh(sakuraBlossomGeo,sakuraPetals[i%4],g);crown.position.y=2.5;crown.scale.set(1.25,.85,1.25);
+addDecor(g)
 }
 function crossing(x,z){const g=group(x,z);for(let j=0;j<6;j++)B(g,-1.5+j*.6,.092,0,.34,.025,2.8,mats.white);addDecor(g)}
 // Tokyo street-level details: red torii gates, glowing lanterns and vending machines.
@@ -491,7 +498,26 @@ B(g,.5,.18,.45,.4,.34,.4,toyPlanter);S(g,.5,.48,.45,.3,toyLeaf)
 }
 addDecor(g)
 }
-function vendingMachine(x,z,i){const g=group(x,z);B(g,0,1,0,1.15,2,.82,i%2?vendingBlue:vermilion);B(g,0,1.26,.43,.88,1.05,.06,mats.white);for(let row=0;row<3;row++)for(let col=0;col<4;col++)S(g,-.3+col*.2,1.62-row*.3,.48,.07,palette[(row+col+i)%6]);B(g,.31,.54,.46,.16,.24,.04,mats.dark);B(g,0,.23,.46,.65,.13,.04,mats.dark);addDecor(g)}
+// Detailed 3D vending kiosk with illuminated drink bays, canopy and payment console.
+function vendingMachine(x,z,i){
+const g=group(x,z),shell=i%2?vendingBlue:vermilion;
+toyShadow(g,0,0,.65,.5);
+B(g,0,1.03,0,1.22,2.05,.86,shell);
+B(g,0,2.12,0,1.36,.18,1.02,artMat.ivory);
+B(g,-.17,1.43,.455,.76,1.12,.07,artMat.dark);
+B(g,-.17,1.43,.495,.7,1.03,.04,artMat.glass);
+for(let row=0;row<3;row++)for(let col=0;col<4;col++){
+const px=-.44+col*.18,py=1.78-row*.29;
+C(g,px,py,.54,.052,.17,pickupColors[(row+col+i)%6]);
+B(g,px,py-.13,.54,.14,.025,.11,artMat.ivory)
+}
+B(g,.44,1.13,.47,.23,.58,.1,artMat.ivory);
+B(g,.44,1.25,.535,.13,.13,.04,artMat.dark);
+B(g,.44,.93,.535,.12,.05,.04,artMat.mustard);
+B(g,-.17,.37,.46,.76,.26,.09,artMat.dark);
+B(g,-.17,.37,.52,.59,.07,.045,artMat.ivory);
+addDecor(g)
+}
 function lanternStreet(x,z){const g=group(x,z);C(g,0,1.35,0,.075,2.7,mats.dark);B(g,.42,2.53,0,.84,.075,.075,mats.dark);for(const dx of [.18,.68]){const l=mesh(new THREE.CylinderGeometry(.2,.2,.42,10),lanternGlow,g);l.position.set(dx,2.18,0);C(g,dx,2.44,0,.21,.05,vermilion);C(g,dx,1.93,0,.21,.05,vermilion)}addDecor(g)}
 // Toy road infrastructure: subtle raised pavement edges and physical lane dividers.
 // A handcrafted-feeling toy city: intersecting roads, blocks, sidewalks and themed districts.
@@ -539,12 +565,27 @@ for(let i=0;i<40;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5
 // Theme-specific landmarks, farm animals and animated village residents.
 const theme=world[2],vill=theme==='village';
 const skin=color('#ffcfaa'),coat=color('#a7dcf2'),pants=color('#456b98'),animalBrown=color('#bf8655'),animalCream=color('#fff3d7'),animalBlack=color('#383b50');
-function person(x,z,i){const g=group(x,z),activity=i%4;C(g,0,.85,0,.22,.9,i%2?mats.purple:coat);S(g,0,1.48,0,.31,skin);C(g,-.13,.29,0,.11,.5,pants);C(g,.13,.29,0,.11,.5,pants);S(g,0,1.8,0,.31,i%2?mats.white:animalBrown);
-if(activity===0){B(g,.55,.37,0,.75,.2,.3,mats.wood);C(g,.45,.65,0,.06,.55,mats.wood)}
-else if(activity===1){B(g,.55,.42,0,1.5,.17,.45,mats.wood);C(g,.07,.2,0,.09,.35,mats.wood);C(g,1,.2,0,.09,.35,mats.wood)}
-else if(activity===2){B(g,.7,.3,0,.55,.38,.45,mats.wood);for(let k=0;k<3;k++)S(g,.5+k*.15,.64,0,.12,mats.orange)}
-else{C(g,.42,.65,0,.05,.85,mats.wood);B(g,.42,.95,0,.46,.12,.24,mats.dark)}
-g.userData.bob=i%3;actors.push(g);return addDecor(g)}
+// Rounded toy pedestrians with hair, shoes, hands and colorful accessories.
+const toySkin=color('#f4bf9b'),toyHair=[color('#45332d'),color('#8a5538'),color('#272c3e')];
+const toyCoats=[color('#e7686a'),color('#4d9cbb'),color('#e3b14f'),color('#8e78c5')];
+function person(x,z,i){
+const g=group(x,z),outfit=toyCoats[i%4],hair=toyHair[i%3];
+toyShadow(g,0,0,.32,.25);
+const torso=mesh(toyCarBodyGeo,outfit,g);torso.position.y=.89;torso.scale.set(.28,.43,.23);
+S(g,0,1.49,0,.28,toySkin);
+const cap=mesh(new THREE.SphereGeometry(.29,10,8,0,Math.PI*2,0,Math.PI*.55),hair,g);
+cap.position.y=1.59;
+for(const side of [-1,1]){
+C(g,side*.13,.32,0,.09,.5,pants);
+S(g,side*.13,.1,.09,.14,artMat.dark);
+const arm=mesh(new THREE.CapsuleGeometry(.095,.35,3,6),outfit,g);
+arm.position.set(side*.34,.95,0);arm.rotation.z=side*.2;
+S(g,side*.38,.63,0,.095,toySkin)
+}
+if(i%3===0){B(g,.44,.59,.08,.4,.38,.2,artMat.mustard);B(g,.44,.8,.08,.32,.06,.2,artMat.dark)}
+if(i%3===1){const bag=mesh(toyCarBodyGeo,artMat.terracotta,g);bag.position.set(-.37,.58,.1);bag.scale.set(.21,.24,.14)}
+g.userData.bob=i%3;actors.push(g);return addDecor(g)
+}
 function animal(x,z,i){const g=group(x,z),mat=i%3===0?animalCream:i%3===1?animalBrown:animalBlack;const body=mesh(sphereGeo,mat,g);body.position.set(0,.45,0);body.scale.set(.62,.43,.35);S(g,.53,.6,0,.29,mat);for(const zz of [-.22,.22])for(const xx of [-.36,.35])C(g,xx,.19,zz,.095,.37,mat);for(const zz of [-.22,.22]){const ear=mesh(new THREE.ConeGeometry(.15,.3,5),mat,g);ear.position.set(.55,.94,zz)}S(g,.75,.57,.13,.055,mats.dark);S(g,.75,.57,-.13,.055,mats.dark);actors.push(g);return addDecor(g)}
 function landmark(x,z,i){const g=group(x,z);if(theme==='skyline'||theme==='neon'){const h=5+i%5;B(g,0,h/2,0,2.5,h,2.5,i%2?mats.blue:mats.purple);for(let k=1;k<h;k++)B(g,0,k+.15,1.29,1.7,.16,.07,mats.white);if(theme==='neon')for(let k=0;k<3;k++)B(g,0,h*.3+k*.65,1.38,1.5,.16,.07,mats.pink)}
 else if(theme==='desert'){B(g,0,1.1,0,3.2,2.2,2.8,mats.white);for(let k=0;k<3;k++){const dome=mesh(new THREE.SphereGeometry(.57,12,8,0,Math.PI*2,0,Math.PI/2),mats.yellow,g);dome.position.set((k-1)*.9,2.25,0)}}
