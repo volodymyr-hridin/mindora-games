@@ -36,7 +36,7 @@ const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.SphereGeometry(1,1
 function mesh(geo,mat,parent=scene){const o=new THREE.Mesh(geo,mat);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o}
 function makeBox(x,y,z,sx,sy,sz,mat,parent=scene){const m=mesh(boxGeo,mat,parent);m.position.set(x,y,z);m.scale.set(sx,sy,sz);return m}
 function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.position.set(x,y,z);m.scale.setScalar(r);return m}
-function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b9dce5');scene.fog=new THREE.Fog('#b9dce5',46,105);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(9,20,37);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);
+function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b9dce5');scene.fog=new THREE.Fog('#b9dce5',46,105);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(10,17,34);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xfff6e9,0x718c8c,2.1));const sun=new THREE.DirectionalLight(0xffd4a5,2.7);sun.position.set(-9,23,12);sun.castShadow=false;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,mats.water);ocean.receiveShadow=false;ground=makeBox(0,-.45,0,W,.8,D,mats.grass);ground.receiveShadow=true;makeBox(0,-.89,0,W+.3,.18,D+.3,mats.edge);
 const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=.19;disk.renderOrder=100;disk.material.depthTest=false;disk.material.depthWrite=false;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.205;ring.renderOrder=102;ring.material.depthTest=false;ring.material.depthWrite=false;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.208;inner.renderOrder=101;inner.material.depthTest=false;inner.material.depthWrite=false;shadow=holeGroup;holeGroup.position.set(0,.04,11);
@@ -232,22 +232,91 @@ toyPlant(g,w*.37,z,i)
 for(let k=0;k<2;k++){B(g,(k-.5)*.55,.25,z,.36,.43,.4,tokyoMat.wood);S(g,(k-.5)*.55,.55,z,.23,k%2?toyLeaf:toyLeaf2)}
 }
 }
+// Designed miniature Japanese storefront kits. Each model has a unique silhouette.
+const artMat={
+terracotta:color('#b95645'),indigo:color('#435f80'),jade:color('#517e6a'),
+mustard:color('#c9984b'),plum:color('#755978'),ivory:color('#fff0d8'),
+timber:color('#946c50'),dark:color('#37465a'),mint:color('#b3d7c5'),
+rose:color('#f0b3ac'),cream:color('#f7dbad'),glass:toyWindow,
+paper:toyWarmWindow
+};
+const artSphere=new THREE.SphereGeometry(1,10,8);
+const artCylinder=new THREE.CylinderGeometry(1,1,1,10);
+function artBall(g,x,y,z,r,mat){const b=mesh(artSphere,mat,g);b.position.set(x,y,z);b.scale.setScalar(r);return b}
+function artRoof(g,w,d,h,mat,kind){
+if(kind===0){ // Wide Japanese gabled roof, prominent silhouette.
+for(const side of [-1,1]){
+const panel=B(g,side*w*.24,h+.4,0,w*.59,.15,d+.54,mat);
+panel.rotation.z=side*.48
+}
+B(g,0,h+.73,0,.13,.16,d+.65,artMat.dark);
+for(const zz of [-d*.45,d*.45])B(g,0,h+.38,zz,w+.4,.1,.09,artMat.dark)
+}else if(kind===1){
+B(g,0,h+.14,0,w+.48,.23,d+.42,mat);
+B(g,0,h+.3,0,w+.3,.12,d+.3,artMat.ivory);
+B(g,0,h+.43,0,w+.45,.12,d+.45,mat)
+}else{
+const cap=mesh(new THREE.ConeGeometry(Math.max(w,d)*.79,1.13,4),mat,g);
+cap.position.y=h+.51;cap.rotation.y=Math.PI/4;
+B(g,0,h+.05,0,w+.42,.12,d+.42,artMat.dark)
+}
+}
+function artLantern(g,x,y,z,mat){
+C(g,x,y+.23,z,.035,.46,artMat.dark);
+const b=artBall(g,x,y,z,.17,mat);b.scale.y=1.22;
+B(g,x,y+.17,z,.2,.045,.2,artMat.dark);
+B(g,x,y-.17,z,.2,.045,.2,artMat.dark)
+}
 function toyLandmark(x,z,i){
-const g=group(x,z),kind=i%6,wall=toyWalls[kind],roof=[tokyoMat.red,tokyoMat.green,tokyoMat.blue,tokyoMat.tile,tokyoMat.wood,tokyoMat.red][kind],h=2.15+(kind%3)*.35,w=2.65,d=2.55;
-B(g,0,.05,0,3.05,.1,3.5,toySidewalk);toyShadow(g,0,0,1.2,1.1);
-B(g,0,h/2,0,w,h,d,wall);B(g,0,.2,0,w+.13,.32,d+.13,tokyoMat.cream);
-if(kind%2===0){const r=mesh(new THREE.ConeGeometry(1.87,.92,4),roof,g);r.position.y=h+.5;r.rotation.y=Math.PI/4}
-else{B(g,0,h+.08,0,w+.3,.22,d+.3,roof);B(g,-.5,h+.4,-.3,1.1,.58,1.2,tokyoMat.cream)}
-B(g,0,.74,d/2+.08,1.85,1.12,.08,kind%2?toyWarmWindow:toyWindow);
-B(g,0,.75,d/2+.15,.08,1.12,.08,tokyoMat.wood);
-B(g,0,1.48,d/2+.37,w+.24,.13,.7,roof);
-for(let k=0;k<7;k++)B(g,-1.1+k*.36,1.27,d/2+.7,.24,.31,.04,k%2?tokyoMat.cream:roof);
-const labels=['ラーメン','カフェ','寿司','本屋','花屋','東京'];
-const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.44),cachedTokyoSign(labels[kind],'#8a5368'));
-sign.position.set(0,1.8,d/2+.24);g.add(sign);
-for(const xx of [-.72,.72]){B(g,xx,1.98,d/2+.06,.43,.36,.08,toyWindow);B(g,xx,1.76,d/2+.12,.52,.07,.12,tokyoMat.cream)}
-toyPlant(g,-1.2,d/2+.52,i);toyPlant(g,1.2,d/2+.52,i+1);
-return addDecor(g)
+const g=group(x,z),kind=((i%6)+6)%6;
+const wall=[artMat.cream,artMat.mint,artMat.rose,artMat.ivory,toyWalls[3],toyWalls[4]][kind];
+const roof=[artMat.terracotta,artMat.indigo,artMat.jade,artMat.plum,artMat.mustard,artMat.indigo][kind];
+const w=[2.8,2.65,2.7,2.65,2.8,2.7][kind],d=2.65,h=[2.55,2.9,2.3,3.15,2.45,2.85][kind];
+B(g,0,.06,0,3.35,.12,3.85,toySidewalk);
+toyShadow(g,0,0,1.24,1.12);
+B(g,0,h/2,0,w,h,d,wall);
+B(g,0,.25,0,w+.14,.48,d+.14,artMat.ivory);
+for(const side of [-1,1])B(g,side*w*.45,h*.53,d/2+.04,.13,h*.9,.12,artMat.timber);
+artRoof(g,w,d,h,roof,kind%3);
+// Oversized glass shop windows with thick warm wooden framing.
+B(g,0,.82,d/2+.07,w*.78,1.28,.1,kind%2?artMat.glass:artMat.paper);
+B(g,0,.82,d/2+.16,.1,1.28,.12,artMat.timber);
+B(g,0,1.47,d/2+.16,w*.83,.12,.17,artMat.timber);
+B(g,0,.2,d/2+.24,w*.84,.12,.26,artMat.timber);
+// Deep striped shop canopy projects visibly toward the street.
+B(g,0,1.68,d/2+.45,w+.25,.13,.85,roof);
+for(let k=0;k<7;k++)B(g,-w*.42+k*w*.14,1.43,d/2+.82,w*.11,.34,.05,k%2?artMat.ivory:roof);
+// Distinct upper windows, balconies and timber slats.
+if(kind===3||kind===5){
+for(const xx of [-.64,.64]){
+B(g,xx,2.36,d/2+.07,.55,.46,.09,artMat.glass);
+B(g,xx,2.36,d/2+.14,.06,.48,.1,artMat.timber)
+}
+B(g,0,2.06,d/2+.38,w*.8,.1,.62,artMat.timber);
+B(g,0,2.41,d/2+.7,w*.8,.07,.08,artMat.dark);
+for(let k=0;k<6;k++)B(g,-w*.33+k*w*.13,2.23,d/2+.7,.045,.37,.07,artMat.dark)
+}else{
+for(const xx of [-.7,.7]){
+B(g,xx,2.07,d/2+.07,.47,.4,.1,artMat.glass);
+B(g,xx,2.07,d/2+.14,.06,.44,.1,artMat.timber)
+}
+}
+const labels=['ラーメン','珈琲','すし','本屋','花屋','おもちゃ'];
+const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.48,.45),cachedTokyoSign(labels[kind],['#ae5547','#3d6379','#4c7866','#655a83','#a67b50','#7c5576'][kind]));
+sign.position.set(0,1.97,d/2+.17);g.add(sign);
+if(kind===0){ // Ramen lanterns and stools.
+for(const xx of [-1.08,1.08])artLantern(g,xx,1.13,d/2+.79,artMat.terracotta);
+for(const xx of [-.55,.55]){C(g,xx,.23,d/2+.87,.18,.42,artMat.timber);artBall(g,xx,.47,d/2+.87,.18,artMat.mustard)}
+}
+if(kind===1){ // Coffee terrace.
+for(const xx of [-.72,.72]){C(g,xx,.38,d/2+.92,.25,.08,artMat.ivory);C(g,xx,.21,d/2+.92,.045,.38,artMat.dark)}
+}
+if(kind===2){for(let k=0;k<4;k++)artLantern(g,-.96+k*.64,1.11,d/2+.77,k%2?artMat.ivory:artMat.terracotta)}
+if(kind===3){for(let k=0;k<4;k++)B(g,-.87+k*.58,.38,d/2+.83,.4,.65,.3,k%2?artMat.indigo:artMat.timber)}
+if(kind===4){for(let k=0;k<5;k++)artBall(g,-1+k*.49,.52,d/2+.8,.22,sakuraPetals[k%4])}
+if(kind===5){for(let k=0;k<4;k++)artBall(g,-.85+k*.55,.46,d/2+.8,.2,k%2?mats.yellow:mats.pink)}
+toyPlant(g,-w*.48,d/2+.56,i);toyPlant(g,w*.48,d/2+.56,i+1);
+addDecor(g)
 }
 function tokyoFacade(x,z,i){
 const g=group(x,z),height=3.5+(i%4)*.6,w=2.65+(i%3)*.32,depth=2.65;
@@ -383,7 +452,7 @@ for(let bx=-20;bx<=20;bx+=10)for(let bz=-30;bz<=30;bz+=12){
 if(Math.hypot(bx,bz-11)<6.8)continue;
 const n=seed++;
 // A compact pair of shops frames each street, with varied heights and roofs.
-if(n%3===0){toyLandmark(bx-1.65,bz,n);toyLandmark(bx+1.65,bz,n+2)}else if(n%3===1){toyLandmark(bx-1.65,bz,n);tokyoFacade(bx+1.65,bz,n*2+1)}else{tokyoFacade(bx-1.65,bz,n*2);toyLandmark(bx+1.65,bz,n+3)}
+toyLandmark(bx-1.65,bz,n*2);toyLandmark(bx+1.65,bz,n*2+3);
 if(n%2===0)sakura(bx,bz-3.5,n);
 else toyStreetCorner(bx,bz-3.5,n);
 if(n%3===0)toyStreetCorner(bx,bz+3.4,n+1);
@@ -488,7 +557,7 @@ portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*
 if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.z+=dt*.6;
 for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math.pow(1-t,.72);const a=star.angle+now*.0028+t*7.5;star.mesh.position.set(Math.cos(a)*r,.227+Math.sin(t*Math.PI)*.015,Math.sin(a)*r);const scale=Math.max(.12,(1-t)*1.5);star.mesh.scale.setScalar(scale);star.mesh.material.opacity=Math.min(1,(1-t)*1.5)}
 ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);
-for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*9);camera.position.x+=(portal.position.x+9-camera.position.x)*follow;camera.position.y+=(20-camera.position.y)*follow;camera.position.z+=(portal.position.z+26-camera.position.z)*follow;camera.lookAt(camera.position.x-9,0,camera.position.z-26);// Hide distant detailed architecture, keeping a small visual margin around the camera.
+for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*9);camera.position.x+=(portal.position.x+10-camera.position.x)*follow;camera.position.y+=(17-camera.position.y)*follow;camera.position.z+=(portal.position.z+23-camera.position.z)*follow;camera.lookAt(camera.position.x-10,0,camera.position.z-23);// Hide distant detailed architecture, keeping a small visual margin around the camera.
 // Skip expensive per-mesh rendering for buildings outside the playable viewport.
 for(const d of decor){const dx=d.position.x-portal.position.x,dz=d.position.z-portal.position.z;d.visible=Math.abs(dx)<34&&Math.abs(dz)<36}
 for(const o of items){if(o.userData.collected){
