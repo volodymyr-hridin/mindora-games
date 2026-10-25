@@ -222,7 +222,7 @@ S(g,x,.53,z,.31,i%2?toyLeaf:toyLeaf2);
 S(g,x-.16,.65,z+.08,.2,toyLeaf2)
 }
 function toyShopProps(g,w,depth,i){
-const z=depth/2+.86;
+const z=depth/2+.51;
 if(i%3===0){toyPlant(g,-w*.38,z,i);toyPlant(g,w*.38,z,i+1)}
 else if(i%3===1){
 B(g,-w*.33,.24,z,.55,.42,.43,tokyoMat.wood);
@@ -234,8 +234,8 @@ for(let k=0;k<2;k++){B(g,(k-.5)*.55,.25,z,.36,.43,.4,tokyoMat.wood);S(g,(k-.5)*.
 }
 function tokyoFacade(x,z,i){
 const g=group(x,z),height=3.5+(i%4)*.6,w=2.65+(i%3)*.32,depth=2.65;
-B(g,0,.035,0,4.65,.1,4.65,toySidewalk);
-B(g,0,.09,2.25,4.65,.08,.15,toyCurb);
+B(g,0,.035,0,3.15,.1,4.1,toySidewalk);
+B(g,0,.09,2.02,3.15,.08,.15,toyCurb);
 toyShadow(g,0,0,w*.76,depth*.78);
 const wall=toyWalls[i%toyWalls.length],roof=tokyoMat.roof,frame=tokyoMat.frame;
 B(g,0,height/2,0,w,height,depth,wall);
@@ -366,8 +366,8 @@ for(let bx=-20;bx<=20;bx+=10)for(let bz=-30;bz<=30;bz+=12){
 if(Math.hypot(bx,bz-11)<6.8)continue;
 const n=seed++;
 // A compact pair of shops frames each street, with varied heights and roofs.
-tokyoFacade(bx-2.25,bz,n*2);
-tokyoFacade(bx+2.25,bz,n*2+1);
+tokyoFacade(bx-1.65,bz,n*2);
+tokyoFacade(bx+1.65,bz,n*2+1);
 if(n%2===0)sakura(bx,bz-3.5,n);
 else toyStreetCorner(bx,bz-3.5,n);
 if(n%3===0)toyStreetCorner(bx,bz+3.4,n+1);
