@@ -36,7 +36,7 @@ const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.SphereGeometry(1,1
 function mesh(geo,mat,parent=scene){const o=new THREE.Mesh(geo,mat);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o}
 function makeBox(x,y,z,sx,sy,sz,mat,parent=scene){const m=mesh(boxGeo,mat,parent);m.position.set(x,y,z);m.scale.set(sx,sy,sz);return m}
 function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.position.set(x,y,z);m.scale.setScalar(r);return m}
-function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b9dce5');scene.fog=new THREE.Fog('#b9dce5',46,105);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(10,17,34);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);
+function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b9dce5');scene.fog=new THREE.Fog('#b9dce5',60,135);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(10,17,34);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xfff6e9,0x718c8c,2.1));const sun=new THREE.DirectionalLight(0xffd4a5,2.7);sun.position.set(-9,23,12);sun.castShadow=false;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,mats.water);ocean.receiveShadow=false;ground=makeBox(0,-.45,0,W,.8,D,mats.grass);ground.receiveShadow=true;makeBox(0,-.89,0,W+.3,.18,D+.3,mats.edge);
 const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=.19;disk.renderOrder=100;disk.material.depthTest=false;disk.material.depthWrite=false;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.205;ring.renderOrder=102;ring.material.depthTest=false;ring.material.depthWrite=false;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.208;inner.renderOrder=101;inner.material.depthTest=false;inner.material.depthWrite=false;shadow=holeGroup;holeGroup.position.set(0,.04,11);
@@ -499,7 +499,20 @@ else if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+
 }
 }
 if(world[0]==='Tokyo'){for(let j=0;j<12;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}for(let j=0;j<12;j++){const x=-22+(j%6)*8,z=-34+Math.floor(j/6)*12;if(Math.hypot(x,z-11)>8)toyStreetCorner(x,z,j)}}
-for(let i=0;i<80;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<3.5)continue;if(i%3===0)car(x,z,i);else treasure(x,z,i)}
+// Put rewards on visible roads and pedestrian lanes instead of underneath shops.
+const collectibleTarget=world[0]==='Tokyo'?125:100;
+for(let i=0;i<collectibleTarget;i++){
+let x,z;
+if(world[0]==='Tokyo'){
+const lane=Math.floor(Math.random()*7)-3;
+if(i%2===0){x=lane*10+(Math.random()-.5)*2.8;z=(Math.random()-.5)*(D-8)}
+else{x=(Math.random()-.5)*(W-8);z=(Math.floor(Math.random()*8)-4)*12+5+(Math.random()-.5)*2.6}
+}else{x=(Math.random()-.5)*(W-5);z=(Math.random()-.5)*(D-5)}
+x=THREE.MathUtils.clamp(x,-W/2+2,W/2-2);
+z=THREE.MathUtils.clamp(z,-D/2+2,D/2-2);
+if(Math.hypot(x,z-11)<3.5){z+=z>11?4:-4;z=THREE.MathUtils.clamp(z,-D/2+2,D/2-2)}
+if(i%4===0)car(x,z,i);else treasure(x,z,i)
+}
 for(let i=0;i<40;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<5)continue;const g=group(x,z);C(g,0,.2,0,.06,.4,mats.mint);for(let k=0;k<5;k++)S(g,Math.cos(k*1.257)*.17,.45,Math.sin(k*1.257)*.17,.12,palette[(i+k)%6]);S(g,0,.45,0,.1,mats.yellow);addDecor(g)}
 
 // Theme-specific landmarks, farm animals and animated village residents.
@@ -581,7 +594,7 @@ const direction=keyboard.lengthSq()>0?keyboard:stickDirection;
 stickSmoothed.lerp(direction,steering);
 if(direction.lengthSq()<.0001)stickSmoothed.set(0,0);
 if(dragging||keyboard.lengthSq()>0){
-const speed=matchMedia('(pointer:fine)').matches?11.8:13.4;
+const speed=matchMedia('(pointer:fine)').matches?13.8:13.4;
 portal.position.x=THREE.MathUtils.clamp(portal.position.x+stickSmoothed.x*speed*dt,-W/2+radius,W/2-radius);
 portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*dt,-D/2+radius,D/2-radius)
 }remaining-=dt;elapsed+=dt;if(remaining<=0){remaining=0;playing=false;showEnd(false,'TIME IS UP!','You collected '+score+' of '+goal+' treasures. Try again!')}updateHud()}
@@ -604,7 +617,7 @@ o.rotation.x+=dt*2.6;o.rotation.z+=dt*1.9;
 const shrink=Math.max(.005,1-Math.pow(Math.max(0,(t-.45)/.55),2)*.99);
 o.scale.copy(u.baseScale).multiplyScalar(shrink);
 if(t>=1){finishCollect(o);scene.remove(o)}
-continue}if(!playing)continue;const d=Math.hypot(o.position.x-portal.position.x,o.position.z-portal.position.z);if(d<radius*.84&&o.userData.size<radius*.8)collect(o)}
+continue}if(!playing)continue;const d=Math.hypot(o.position.x-portal.position.x,o.position.z-portal.position.z);if(d<radius*.92&&o.userData.size<radius*.85)collect(o)}
 renderer.render(scene,camera)}
 function showEnd(won,title,description,paused=false){$('overlay').classList.remove('hidden');$('face').textContent=won?'🏆🌈':paused?'⏸️🌀':'⏰🍭';$('heading').textContent=title;$('description').textContent=description;$('play').textContent=won?'NEXT LEVEL ▶':paused?'RESUME ▶':'TRY AGAIN ▶';if(!paused){track('game_complete',{score,level,success:won,duration_seconds:Math.round(elapsed)});if(won){try{const key='mindora-hole-world-v1',v=JSON.parse(localStorage.getItem(key)||'{}');v.best=Math.max(v.best||0,score);v.level=Math.max(v.level||1,level+1);v.wins=(v.wins||0)+1;localStorage.setItem(key,JSON.stringify(v))}catch{}window.MindoraQuest?.complete()}}}
 $('play').onclick=()=>{try{if(!window.__holeReady){$('description').textContent='The game is still loading. Please wait a moment.';return}const title=$('heading').textContent;$('overlay').classList.add('hidden');if(title==='LEVEL COMPLETE!'){level++;goal=75+Math.min(level-1,6)*10;time=300+Math.min(level-1,5)*25;buildWorld()}else if(title==='TIME IS UP!'){buildWorld()}playing=true;last=performance.now();track('game_start',{level})}catch(err){console.error('Hole World start error',err);$('overlay').classList.remove('hidden');$('description').textContent='Could not start: '+(err?.message||String(err));$('play').textContent='TRY AGAIN ↻'}};
