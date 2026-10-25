@@ -140,13 +140,30 @@ if(van){B(g,0,1.32,0,.75,.09,.73,chromeMat);B(g,-.4,.68,.48,.52,.045,.035,chrome
 g.rotation.y=i%2?Math.PI/2:0;
 return addItem(g,1.35)
 }
-function treasure(x,z,i){const g=group(x,z),type=i%6,c=palette[i%6];if(type===0){C(g,0,.32,0,.3,.64,c);S(g,0,.76,0,.28,mats.white);S(g,0,1.02,0,.15,mats.pink)}
-else if(type===1){B(g,0,.4,0,.65,.8,.65,c);B(g,0,.83,0,.74,.12,.74,mats.white);B(g,0,.43,.35,.2,.3,.08,mats.yellow)}
-else if(type===2){S(g,0,.4,0,.42,c);S(g,.16,.68,0,.15,mats.mint);C(g,0,.13,0,.18,.14,mats.wood)}
-else if(type===3){B(g,0,.19,0,.85,.25,.6,mats.wood);for(let k=0;k<3;k++)S(g,(k-1)*.25,.47,0,.19,palette[(i+k)%6])}
-else if(type===4){C(g,0,.32,0,.33,.64,c);const top=mesh(new THREE.ConeGeometry(.48,.55,7),mats.yellow,g);top.position.y=.89}
-else{B(g,0,.3,0,.8,.6,.65,c);B(g,0,.64,0,.84,.1,.7,mats.white);B(g,0,.31,.36,.26,.28,.08,glass)}
-return addItem(g,.5)}
+// Collectibles deliberately use a vivid arcade palette, distinct from pastel scenery.
+const pickupColors=['#ffba1f','#00e6f0','#ff4c75','#a3ff34','#ff7b22','#b77cff'].map(h=>new THREE.MeshStandardMaterial({color:h,emissive:h,emissiveIntensity:.34,metalness:.2,roughness:.28}));
+const pickupGold=new THREE.MeshStandardMaterial({color:0xffe993,emissive:0xe79a1a,emissiveIntensity:.42,metalness:.55,roughness:.24});
+const pickupGlow=new THREE.MeshBasicMaterial({color:0xffec82,transparent:true,opacity:.8,depthWrite:false});
+function treasure(x,z,i){
+const g=group(x,z),type=i%6,c=pickupColors[type];
+const ring=mesh(new THREE.TorusGeometry(.47,.055,6,20),pickupGlow,g);ring.rotation.x=-Math.PI/2;ring.position.y=.13;
+if(type===0){ // Golden star token
+const star=mesh(new THREE.OctahedronGeometry(.47,0),pickupGold,g);star.position.y=.65;star.rotation.y=Math.PI/4;
+S(g,0,.65,.37,.13,mats.white)
+}else if(type===1){ // Cyan energy crystal
+const gem=mesh(new THREE.OctahedronGeometry(.51,0),c,g);gem.position.y=.65;gem.scale.y=1.28;
+}else if(type===2){ // Bright heart-like jewel
+S(g,-.2,.7,0,.31,c);S(g,.2,.7,0,.31,c);const tip=mesh(new THREE.ConeGeometry(.43,.66,4),c,g);tip.position.y=.39;tip.rotation.y=Math.PI/4;
+}else if(type===3){ // Neon green mystery capsule
+C(g,0,.53,0,.31,.85,c);S(g,0,.95,0,.31,pickupGold);S(g,0,.16,0,.31,c);
+}else if(type===4){ // Orange prize chest
+B(g,0,.42,0,.82,.64,.63,c);B(g,0,.79,0,.91,.13,.72,pickupGold);B(g,0,.46,.34,.22,.32,.09,pickupGold);
+}else{ // Purple arcade gem
+const gem=mesh(new THREE.IcosahedronGeometry(.48,0),c,g);gem.position.y=.65;B(g,0,.2,0,.3,.15,.3,pickupGold);
+}
+g.userData.pickup=true;
+return addItem(g,.5)
+}
 // Detailed diorama props inspired by playful miniature city and countryside references.
 const stone=color('#f1e6d0'),brick=color('#e99b80'),hedge=color('#68b65b'),soil=color('#95644a'),waterBlue=color('#66c9ee'),pinkBloom=color('#ff9ac8'),goldTrim=color('#ffe5a0');
 function streetLamp(x,z){const g=group(x,z);C(g,0,1.25,0,.075,2.5,mats.dark);S(g,0,2.56,0,.25,mats.yellow);C(g,0,2.76,0,.31,.08,mats.blue);addDecor(g)}
@@ -559,7 +576,7 @@ for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math
 ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);
 for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*9);camera.position.x+=(portal.position.x+10-camera.position.x)*follow;camera.position.y+=(17-camera.position.y)*follow;camera.position.z+=(portal.position.z+23-camera.position.z)*follow;camera.lookAt(camera.position.x-10,0,camera.position.z-23);// Hide distant detailed architecture, keeping a small visual margin around the camera.
 // Skip expensive per-mesh rendering for buildings outside the playable viewport.
-for(const d of decor){const dx=d.position.x-portal.position.x,dz=d.position.z-portal.position.z;d.visible=Math.abs(dx)<34&&Math.abs(dz)<36}
+// Keep all scenery visible while traversing the city: no abrupt pop-in or disappearing blocks.
 for(const o of items){if(o.userData.collected){
 const u=o.userData;u.fall=Math.min(1,u.fall+dt*1.12);
 const t=u.fall,ease=t*t*(3-2*t);
