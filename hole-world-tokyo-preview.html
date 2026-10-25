@@ -100,7 +100,7 @@ function C(parent,x,y,z,r,h,mat){const o=mesh(cylGeo,mat,parent);o.position.set(
 function S(parent,x,y,z,r,mat){return ball(x,y,z,r,mat,parent)}
 function group(x,z){const g=new THREE.Group();scene.add(g);g.position.set(x,.05,z);return g}
 function addDecor(g){decor.push(g);return g}
-function addItem(g,size){g.userData={group:true,size,collected:false,fall:0};items.push(g);return g}
+function addItem(g,size){Object.assign(g.userData,{group:true,size,collected:false,fall:0});items.push(g);return g}
 function building(x,z,idx){const g=group(x,z),w=1.7+(idx%3)*.36,h=2.1+(idx%5)*.68,d=1.8;const wall=palette[idx%palette.length];B(g,0,h/2,0,w,h,d,wall);B(g,0,h+.13,0,w+.23,.28,d+.23,idx%2?roof:darkRoof);B(g,0,.7,d/2+.025,.48,1.1,.08,door);
 for(let row=0;row<Math.min(4,Math.floor(h));row++)for(let col=-1;col<=1;col+=2){B(g,col*w*.26,1.45+row*.72,d/2+.07,.35,.39,.09,glass);B(g,col*w*.26,1.45+row*.72,d/2+.13,.09,.39,.06,mats.white)}
 if(idx%4===0){const chimney=B(g,w*.27,h+.57,-.25,.32,.9,.35,mats.white);B(g,w*.27,h+1.04,-.25,.45,.12,.46,roof)}
@@ -159,6 +159,7 @@ const pickupBeaconGeo=new THREE.ConeGeometry(.15,.5,6);
 const pickupBeaconMat=new THREE.MeshBasicMaterial({color:0xfff0b1,transparent:true,opacity:.9,depthWrite:false});
 function treasure(x,z,i){
 const g=group(x,z),type=i%6,c=pickupColors[type];
+toyShadow(g,0,0,.42,.42);
 const ring=mesh(pickupHaloGeo,pickupGlow,g);ring.rotation.x=-Math.PI/2;ring.position.y=.16;
 const beacon=mesh(pickupBeaconGeo,pickupBeaconMat,g);beacon.position.y=1.25;
 if(type===0){ // Golden star token
@@ -309,6 +310,26 @@ B(g,0,h/2,0,w,h,d,wall);
 B(g,0,.25,0,w+.14,.48,d+.14,artMat.ivory);
 for(const side of [-1,1])B(g,side*w*.45,h*.53,d/2+.04,.13,h*.9,.12,artMat.timber);
 artRoof(g,w,d,h,roof,kind%3);
+// Hand-built roof ridge, tile ribs and carved eaves add depth to the miniature silhouette.
+if(kind%3===0){
+for(let k=-3;k<=3;k++){
+const z=k*d/7;
+for(const side of [-1,1]){
+const tile=B(g,side*w*.24,h+.46,z,w*.57,.045,.055,kind%2?artMat.dark:artMat.ivory);
+tile.rotation.z=side*.48
+}
+}
+for(const z of [-d*.49,d*.49]){
+const endcap=mesh(new THREE.SphereGeometry(.095,8,6),artMat.dark,g);
+endcap.position.set(0,h+.74,z)
+}
+}
+// Bright recessed entrance, glass reflections and chunky door handles.
+B(g,0,.76,d/2+.085,w*.78,1.26,.065,artMat.dark);
+B(g,0,.76,d/2+.16,w*.71,1.15,.055,artMat.glass);
+B(g,-.21,.75,d/2+.21,.055,1.08,.07,artMat.ivory);
+B(g,.21,.75,d/2+.21,.055,1.08,.07,artMat.ivory);
+for(const xx of [-.08,.08])B(g,xx,.71,d/2+.26,.04,.18,.06,artMat.mustard);
 // Oversized glass shop windows with thick warm wooden framing.
 B(g,0,.82,d/2+.07,w*.78,1.28,.1,kind%2?artMat.glass:artMat.paper);
 B(g,0,.82,d/2+.16,.1,1.28,.12,artMat.timber);
@@ -500,7 +521,7 @@ else if(idx%5===0)house(px,pz,idx);else if(idx%7===0){tree(px-1,pz,idx);tree(px+
 }
 if(world[0]==='Tokyo'){for(let j=0;j<12;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}for(let j=0;j<12;j++){const x=-22+(j%6)*8,z=-34+Math.floor(j/6)*12;if(Math.hypot(x,z-11)>8)toyStreetCorner(x,z,j)}}
 // Put rewards on visible roads and pedestrian lanes instead of underneath shops.
-const collectibleTarget=world[0]==='Tokyo'?125:100;
+const collectibleTarget=world[0]==='Tokyo'?135:110;
 for(let i=0;i<collectibleTarget;i++){
 let x,z;
 if(world[0]==='Tokyo'){
@@ -511,7 +532,7 @@ else{x=(Math.random()-.5)*(W-8);z=(Math.floor(Math.random()*8)-4)*12+5+(Math.ran
 x=THREE.MathUtils.clamp(x,-W/2+2,W/2-2);
 z=THREE.MathUtils.clamp(z,-D/2+2,D/2-2);
 if(Math.hypot(x,z-11)<3.5){z+=z>11?4:-4;z=THREE.MathUtils.clamp(z,-D/2+2,D/2-2)}
-if(i%4===0)car(x,z,i);else treasure(x,z,i)
+if(i%5===0)car(x,z,i);else treasure(x,z,i)
 }
 for(let i=0;i<40;i++){const x=(Math.random()-.5)*(W-5),z=(Math.random()-.5)*(D-5);if(Math.hypot(x,z-11)<5)continue;const g=group(x,z);C(g,0,.2,0,.06,.4,mats.mint);for(let k=0;k<5;k++)S(g,Math.cos(k*1.257)*.17,.45,Math.sin(k*1.257)*.17,.12,palette[(i+k)%6]);S(g,0,.45,0,.1,mats.yellow);addDecor(g)}
 
