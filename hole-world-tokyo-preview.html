@@ -157,24 +157,55 @@ const pickupGlow=new THREE.MeshBasicMaterial({color:0xffec82,transparent:true,op
 const pickupHaloGeo=new THREE.TorusGeometry(.58,.07,7,24);
 const pickupBeaconGeo=new THREE.ConeGeometry(.15,.5,6);
 const pickupBeaconMat=new THREE.MeshBasicMaterial({color:0xfff0b1,transparent:true,opacity:.9,depthWrite:false});
+// Reusable low-poly 3D collectible models with silhouettes readable on a phone.
+const prizeCeramic=new THREE.MeshStandardMaterial({color:0xfff4df,roughness:.42});
+const prizeInk=new THREE.MeshStandardMaterial({color:0x293e53,roughness:.5});
+const prizeWood=new THREE.MeshStandardMaterial({color:0xb87b4c,roughness:.65});
+const prizeLeaf=new THREE.MeshStandardMaterial({color:0x42c76d,roughness:.6});
+const prizeMetal=new THREE.MeshStandardMaterial({color:0xffcf54,metalness:.55,roughness:.24});
+const prizeGlass=new THREE.MeshStandardMaterial({color:0x6ce7ff,metalness:.1,roughness:.18,transparent:true,opacity:.87});
+const prizeGeo={torus:new THREE.TorusGeometry(.24,.085,8,18),cone:new THREE.ConeGeometry(.26,.46,10),cup:new THREE.CylinderGeometry(.29,.23,.43,12),dish:new THREE.CylinderGeometry(.43,.4,.09,16),box:new THREE.BoxGeometry(.68,.55,.5),coin:new THREE.CylinderGeometry(.39,.39,.12,20)};
 function treasure(x,z,i){
-const g=group(x,z),type=i%6,c=pickupColors[type];
-toyShadow(g,0,0,.42,.42);
-const ring=mesh(pickupHaloGeo,pickupGlow,g);ring.rotation.x=-Math.PI/2;ring.position.y=.16;
-const beacon=mesh(pickupBeaconGeo,pickupBeaconMat,g);beacon.position.y=1.25;
-if(type===0){ // Golden star token
-const star=mesh(new THREE.OctahedronGeometry(.47,0),pickupGold,g);star.position.y=.65;star.rotation.y=Math.PI/4;
-S(g,0,.65,.37,.13,mats.white)
-}else if(type===1){ // Cyan energy crystal
-const gem=mesh(new THREE.OctahedronGeometry(.51,0),c,g);gem.position.y=.65;gem.scale.y=1.28;
-}else if(type===2){ // Bright heart-like jewel
-S(g,-.2,.7,0,.31,c);S(g,.2,.7,0,.31,c);const tip=mesh(new THREE.ConeGeometry(.43,.66,4),c,g);tip.position.y=.39;tip.rotation.y=Math.PI/4;
-}else if(type===3){ // Neon green mystery capsule
-C(g,0,.53,0,.31,.85,c);S(g,0,.95,0,.31,pickupGold);S(g,0,.16,0,.31,c);
-}else if(type===4){ // Orange prize chest
-B(g,0,.42,0,.82,.64,.63,c);B(g,0,.79,0,.91,.13,.72,pickupGold);B(g,0,.46,.34,.22,.32,.09,pickupGold);
-}else{ // Purple arcade gem
-const gem=mesh(new THREE.IcosahedronGeometry(.48,0),c,g);gem.position.y=.65;B(g,0,.2,0,.3,.15,.3,pickupGold);
+const g=group(x,z),type=i%8,c=pickupColors[type%pickupColors.length];
+toyShadow(g,0,0,.4,.4);
+const halo=mesh(pickupHaloGeo,pickupGlow,g);halo.rotation.x=-Math.PI/2;halo.position.y=.14;
+const add=(geo,mat,x,y,z)=>{const o=mesh(geo,mat,g);o.position.set(x,y,z);return o};
+if(type===0){ // Japanese lucky coin with embossed center
+const coin=add(prizeGeo.coin,prizeMetal,0,.64,0);coin.rotation.z=Math.PI/2;
+const cutout=add(new THREE.TorusGeometry(.15,.045,7,16),prizeInk,.08,.64,0);cutout.rotation.y=Math.PI/2;
+}else if(type===1){ // Ramen bowl with noodles and chopsticks
+add(prizeGeo.dish,prizeCeramic,0,.34,0);
+const bowl=add(new THREE.SphereGeometry(.37,14,10,0,Math.PI*2,Math.PI*.45,Math.PI*.55),c,0,.48,0);
+bowl.rotation.x=Math.PI;add(new THREE.TorusGeometry(.35,.045,8,18),prizeCeramic,0,.63,0).rotation.x=Math.PI/2;
+for(let k=0;k<4;k++){const noodle=add(new THREE.TorusGeometry(.14+k*.043,.022,5,14),prizeMetal,0,.64+k*.006,0);noodle.rotation.x=Math.PI/2}
+for(const dx of [-.08,.08]){const stick=add(new THREE.CylinderGeometry(.016,.022,.82,6),prizeWood,dx,.87,0);stick.rotation.z=.28}
+}else if(type===2){ // Sakura blossom: sculpted petals and golden center
+for(let k=0;k<5;k++){const t=k*Math.PI*2/5;const petal=add(new THREE.SphereGeometry(.23,10,8),c,Math.cos(t)*.24,.64,Math.sin(t)*.24);petal.scale.set(.85,.46,1.2);petal.rotation.y=-t}
+add(new THREE.SphereGeometry(.14,12,8),prizeMetal,0,.71,0);
+}else if(type===3){ // Miniature capsule vending machine
+add(prizeGeo.box,c,0,.48,0);
+add(new THREE.BoxGeometry(.52,.36,.055),prizeGlass,0,.58,.28);
+for(let k=0;k<6;k++)add(new THREE.SphereGeometry(.085,8,7),pickupColors[k],-.17+(k%3)*.17,.67-Math.floor(k/3)*.17,.33);
+add(new THREE.CylinderGeometry(.07,.07,.06,10),prizeMetal,.2,.35,.3).rotation.x=Math.PI/2;
+}else if(type===4){ // Toy sushi platter with salmon and seaweed
+add(prizeGeo.dish,prizeInk,0,.28,0);
+for(const xx of [-.19,.19]){const rice=add(new THREE.SphereGeometry(.22,12,8),prizeCeramic,xx,.47,0);rice.scale.set(1,.55,.75);
+const topping=add(new THREE.SphereGeometry(.22,12,8),c,xx,.58,0);topping.scale.set(1,.3,.77);
+add(new THREE.BoxGeometry(.055,.12,.36),prizeInk,xx,.54,0)}
+}else if(type===5){ // Lucky cat with ears, paws and bell
+const body=add(new THREE.SphereGeometry(.3,14,10),prizeCeramic,0,.48,0);body.scale.set(.9,1.2,.82);
+add(new THREE.SphereGeometry(.24,14,10),prizeCeramic,0,.89,0);
+for(const xx of [-.17,.17]){const ear=add(prizeGeo.cone,prizeCeramic,xx,1.13,0);ear.scale.set(.5,.65,.5)}
+for(const xx of [-.095,.095])add(new THREE.SphereGeometry(.027,8,6),prizeInk,xx,.92,.2);
+add(new THREE.SphereGeometry(.075,8,6),prizeMetal,0,.69,.27);
+const paw=add(new THREE.CapsuleGeometry(.07,.23,3,7),prizeCeramic,.27,.9,.03);paw.rotation.z=-.24;
+}else if(type===6){ // Gemstone with a dimensional golden stand
+add(new THREE.CylinderGeometry(.27,.34,.13,10),prizeMetal,0,.23,0);
+const gem=add(new THREE.IcosahedronGeometry(.38,0),c,0,.67,0);gem.scale.set(.95,1.23,.95);
+}else{ // Mini bonsai in a ceramic pot
+add(new THREE.CylinderGeometry(.25,.19,.32,10),c,0,.32,0);
+add(new THREE.CylinderGeometry(.055,.085,.5,8),prizeWood,0,.68,0);
+for(const [xx,yy,zz,sc] of [[0,.98,0,.28],[-.23,.82,0,.21],[.21,.87,.08,.22]]){const foliage=add(new THREE.IcosahedronGeometry(1,1),prizeLeaf,xx,yy,zz);foliage.scale.setScalar(sc)}
 }
 g.userData.pickup=true;g.userData.pickupPhase=i*1.7;
 return addItem(g,.5)
