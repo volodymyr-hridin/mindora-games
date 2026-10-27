@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#101c39"><meta name="description" content="Play Mindora Hole World, a colorful 3D arcade game. Move the magic portal, collect toys, grow bigger and beat the clock."><title>Hole World - Mindora Games</title><link rel="canonical" href="https://playmindora.com/hole-world.html">
-<style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0c1834;color:white;font-family:system-ui,-apple-system,sans-serif}#game{position:fixed;inset:0;touch-action:none;overscroll-behavior:none}canvas{display:block;touch-action:none}#hud{position:fixed;z-index:5;top:max(14px,env(safe-area-inset-top));left:12px;right:12px;display:flex;gap:9px;align-items:center;justify-content:space-between;pointer-events:none}.pill{background:#19295be8;border:2px solid #7188e4;box-shadow:0 5px 0 #09143c,0 9px 24px #0005;border-radius:18px;padding:9px 12px;text-align:center;font-weight:850;text-shadow:0 2px 2px #0006;min-width:70px}.pill small{display:block;font-size:10px;letter-spacing:1.2px;color:#c6d9ff}.pill strong{font-size:22px}.pill.gold{border-color:#ffd568;background:#7e4b31ee}#progress{position:fixed;z-index:5;top:calc(max(14px,env(safe-area-inset-top)) + 76px);left:15px;right:15px;height:12px;border-radius:15px;background:#13244e;border:2px solid #7690c8;overflow:hidden;pointer-events:none}#fill{height:100%;width:0%;background:linear-gradient(90deg,#53edcb,#b0ff85);transition:width .2s}#level{position:fixed;top:calc(max(14px,env(safe-area-inset-top)) + 97px);left:18px;font-size:12px;font-weight:800;letter-spacing:1px;color:#e9f8ff;text-shadow:0 2px 4px #000;pointer-events:none;z-index:5}#notice{position:fixed;top:29%;left:0;right:0;text-align:center;z-index:8;font-size:clamp(22px,7vw,40px);font-weight:1000;color:#fff3a0;text-shadow:0 4px 0 #84533a,0 6px 15px #0009;pointer-events:none;opacity:0;transition:opacity .2s}#notice.show{opacity:1}#bottom{position:fixed;z-index:6;bottom:max(15px,env(safe-area-inset-bottom));left:12px;right:12px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}#bottom a,#bottom button{pointer-events:auto;color:#fff;background:#1b2b61e8;border:2px solid #8da8ee;border-radius:16px;padding:10px 13px;text-decoration:none;font-weight:800;font-size:13px}#bottom .hint{font-size:12px;color:#f8ffdd;text-align:center;text-shadow:0 2px 5px #000;max-width:170px}#overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:linear-gradient(#0c1b43d9,#071127ee);padding:20px}#overlay.hidden{display:none}.panel{width:min(440px,100%);padding:27px 23px;border-radius:28px;text-align:center;background:linear-gradient(155deg,#314d94,#182a5c 65%,#16234b);border:2px solid #9cc2ff;box-shadow:0 15px 0 #0a1637,0 26px 65px #0009}.panel h1{font-size:clamp(34px,9vw,56px);line-height:1.03;letter-spacing:-2px;margin:12px 0 10px;color:#ffe08e;text-shadow:0 5px 0 #a36d53}.panel p{color:#d7e9ff;line-height:1.55}.panel .emoji{font-size:68px;filter:drop-shadow(0 7px 2px #0004)}.panel button{border:0;border-radius:18px;background:linear-gradient(#fef29e,#ffc15a);box-shadow:0 6px 0 #bd7436;padding:15px 34px;font-size:20px;font-weight:950;color:#56371c;cursor:pointer;margin:12px 0}.panel .note{font-size:12px;color:#b6d3f3}#error{display:none;position:fixed;inset:0;z-index:30;background:#142246;padding:25px;text-align:center;align-content:center}#error a{color:#ffe08e}@media(max-width:390px){.pill{padding:7px 9px;min-width:62px}.pill strong{font-size:18px}}</style>
+<style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0c1834;color:white;font-family:system-ui,-apple-system,sans-serif}#game{position:fixed;inset:0;touch-action:none;overscroll-behavior:none}canvas{display:block;touch-action:none}#hud{position:fixed;z-index:5;top:max(14px,env(safe-area-inset-top));left:12px;right:12px;display:flex;gap:9px;align-items:center;justify-content:space-between;pointer-events:none}.pill{background:#19295be8;border:2px solid #7188e4;box-shadow:0 5px 0 #09143c,0 9px 24px #0005;border-radius:18px;padding:9px 12px;text-align:center;font-weight:850;text-shadow:0 2px 2px #0006;min-width:70px}.pill small{display:block;font-size:10px;letter-spacing:1.2px;color:#c6d9ff}.pill strong{font-size:22px}.pill.gold{border-color:#ffd568;background:#7e4b31ee}#progress{position:fixed;z-index:5;top:calc(max(14px,env(safe-area-inset-top)) + 76px);left:15px;right:15px;height:12px;border-radius:15px;background:#13244e;border:2px solid #7690c8;overflow:hidden;pointer-events:none}#fill{height:100%;width:0%;background:linear-gradient(90deg,#53edcb,#b0ff85);transition:width .2s}#level{position:fixed;top:calc(max(14px,env(safe-area-inset-top)) + 97px);left:18px;font-size:12px;font-weight:800;letter-spacing:1px;color:#e9f8ff;text-shadow:0 2px 4px #000;pointer-events:none;z-index:5}#notice{position:fixed;top:29%;left:0;right:0;text-align:center;z-index:8;font-size:clamp(22px,7vw,40px);font-weight:1000;color:#fff3a0;text-shadow:0 4px 0 #84533a,0 6px 15px #0009;pointer-events:none;opacity:0;transition:opacity .2s}#notice.show{opacity:1}#bottom{position:fixed;z-index:6;bottom:max(15px,env(safe-area-inset-bottom));left:12px;right:12px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}#bottom a,#bottom button{pointer-events:auto;color:#fff;background:#1b2b61e8;border:2px solid #8da8ee;border-radius:16px;padding:10px 13px;text-decoration:none;font-weight:800;font-size:13px}#bottom .hint{font-size:12px;color:#f8ffdd;text-align:center;text-shadow:0 2px 5px #000;max-width:170px}#overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:linear-gradient(#0c1b43d9,#071127ee);padding:20px}#overlay.hidden{display:none}.panel{width:min(440px,100%);padding:27px 23px;border-radius:28px;text-align:center;background:linear-gradient(155deg,#314d94,#182a5c 65%,#16234b);border:2px solid #9cc2ff;box-shadow:0 15px 0 #0a1637,0 26px 65px #0009}.panel h1{font-size:clamp(34px,9vw,56px);line-height:1.03;letter-spacing:-2px;margin:12px 0 10px;color:#ffe08e;text-shadow:0 5px 0 #a36d53}.panel p{color:#d7e9ff;line-height:1.55}.panel .emoji{font-size:68px;filter:drop-shadow(0 7px 2px #0004)}.panel button{border:0;border-radius:18px;background:linear-gradient(#fef29e,#ffc15a);box-shadow:0 6px 0 #bd7436;padding:15px 34px;font-size:20px;font-weight:950;color:#56371c;cursor:pointer;margin:12px 0}.panel .note{font-size:12px;color:#b6d3f3}#error{display:none;position:fixed;inset:0;z-index:30;background:#142246;padding:25px;text-align:center;align-content:center}#error a{color:#ffe08e}@media(max-width:390px){.pill{padding:7px 9px;min-width:62px}.pill strong{font-size:18px}}#bonus{position:fixed;z-index:7;right:16px;top:calc(max(14px,env(safe-area-inset-top)) + 99px);background:#0c244fcf;border:1px solid #92dbffb8;border-radius:14px;padding:7px 12px;color:#e9f9ff;font-size:12px;font-weight:900;pointer-events:none;box-shadow:0 8px 20px #0004}#bonus b{color:#ffe584}#bonus.hot{border-color:#ffd568;background:#66354adf;animation:pulse .35s ease-in-out}#difficulty{display:flex;justify-content:center;gap:7px;margin:14px 0 5px}#difficulty button{font-size:13px;flex:1;max-width:115px;padding:10px 6px;margin:0;border-radius:12px;border:1px solid #9db8e6;background:#13254f;color:#d5e5ff;box-shadow:none}#difficulty button[aria-pressed=true]{color:#1b2853;background:#ffe08e;border-color:#ffe08e;box-shadow:0 3px 0 #c38d52}#best{display:block;font-size:13px;font-weight:750;color:#a9f7e2;margin-top:10px}#share{display:block;background:#304c79;color:#fff;font-size:13px;padding:10px 15px;box-shadow:0 4px 0 #0d1b37;margin:4px auto 10px}#share[hidden],#difficulty[hidden]{display:none}#pause{margin-left:auto;margin-right:10px}.panel button:focus-visible,#bottom button:focus-visible{outline:3px solid #fff;outline-offset:3px}@keyframes pulse{50%{transform:scale(1.04)}}@media(max-width:540px){#hud{gap:5px;left:8px;right:8px}.pill{flex:1;min-width:0;padding:7px 5px;border-radius:12px}.pill small{font-size:9px}.pill strong{font-size:17px}#level{max-width:62%;font-size:10px}#bonus{right:8px;font-size:10px;padding:7px}#bottom{left:8px;right:8px}#bottom .hint{font-size:10px;max-width:125px}#bottom a,#bottom button{padding:9px;font-size:11px}.panel{padding:20px 17px}.panel .emoji{font-size:52px}}@media(prefers-reduced-motion:reduce){#bonus.hot{animation:none}#fill{transition:none}}</style>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',wait_for_update:500})</script><script async src="https://www.googletagmanager.com/gtag/js?id=G-FJLZEC3YXJ"></script><script>gtag('js',new Date());gtag('config','G-FJLZEC3YXJ')</script><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7353380398910735" crossorigin="anonymous"></script>
-</head><body><div id="game" aria-label="3D Hole World game area"></div><div id="hud"><div class="pill"><small>TIME</small><strong id="time">300</strong></div><div class="pill gold"><small>COLLECTED</small><strong id="score">0 / 75</strong></div><div class="pill"><small>PORTAL</small><strong id="size">LV 1</strong></div></div><div id="progress"><div id="fill"></div></div><div id="level">🌈 CANDY GARDEN · LEVEL 1</div><div id="notice"></div><div id="bottom"><a href="./">← Games</a><span class="hint">Hold + drag · Desktop: WASD / arrows</span><button id="sound" aria-label="Toggle sound">🔊</button></div><div id="overlay"><section class="panel"><div class="emoji" id="face">🌀🍭</div><h1 id="heading">HOLE WORLD</h1><p id="description">A tiny portal. A world of treasures! Touch, drag in a direction and <b>keep holding</b> to move continuously. First swallow <b>small toys, candy and gifts</b>. After 28 items, your hole can swallow <b>cars</b> too. Collect <b>75 objects</b> in five minutes.</p><button id="play">LET'S PLAY ▶</button><div class="note">Free 3D browser game · No install · Progress saved locally</div></section></div><div id="error">This game needs WebGL and a modern browser.<p><a href="./">Back to Mindora Games</a></p></div>
+</head><body><div id="game" aria-label="3D Hole World game area"></div><div id="hud"><div class="pill"><small>TIME</small><strong id="time">300</strong></div><div class="pill gold"><small>COLLECTED</small><strong id="score">0 / 75</strong></div><div class="pill"><small>PORTAL</small><strong id="size">LV 1</strong></div></div><div id="progress"><div id="fill"></div></div><div id="level">🌈 CANDY GARDEN · LEVEL 1</div><div id="notice"></div><div id="bonus" aria-live="polite">⭐ <b id="points">0</b> PTS · <span id="combo">COMBO ×1</span></div><div id="bottom"><a href="./">← Games</a><span class="hint">Hold + drag · Desktop: WASD / arrows</span><button id="pause" aria-label="Pause game">Ⅱ PAUSE</button><button id="sound" aria-label="Toggle sound">🔊</button></div><div id="overlay"><section class="panel"><div class="emoji" id="face">🌀🍭</div><h1 id="heading">HOLE WORLD</h1><p id="description">A tiny portal. A world of treasures! Touch, drag in a direction and <b>keep holding</b> to move continuously. First swallow <b>small toys, candy and gifts</b>. After 28 items, your hole can swallow <b>cars</b> too. Race the clock, chain combos and grow the portal to swallow cars. Pick your challenge!</p><div id="difficulty" role="group" aria-label="Choose difficulty"><button type="button" data-mode="easy" aria-pressed="false">EASY</button><button type="button" data-mode="medium" aria-pressed="true">MEDIUM</button><button type="button" data-mode="hard" aria-pressed="false">HARD</button></div><span id="best">Collect objects, earn points, unlock new cities</span><button id="play">LET'S PLAY ▶</button><button id="share" type="button" hidden>↗ SHARE YOUR SCORE</button><div class="note">Free 3D browser game · No install · Progress saved locally</div></section></div><div id="error">This game needs WebGL and a modern browser.<p><a href="./">Back to Mindora Games</a></p></div>
 <script>
 (function(){
 const b=document.getElementById('play'),overlay=document.getElementById('overlay'),desc=document.getElementById('description');
@@ -28,9 +28,25 @@ catch(primaryError){try{THREE=await import('https://unpkg.com/three@0.170.0/buil
 catch(secondaryError){document.getElementById('error').style.display='block';document.getElementById('error').innerHTML='Unable to load the 3D engine. Please check your connection and refresh the page.<p><a href="./">Back to Mindora Games</a></p>';throw secondaryError}}
 const $=id=>document.getElementById(id),W=62,D=90,container=$('game');
 let ripple,effectMat,sparkPool=[],sparkCursor=0,swirlStars=[];
+const cutUniforms={center:{value:null},radius:{value:1}};
+const MODES={easy:{goal:24,time:170,speed:12.3},medium:{goal:30,time:145,speed:13.1},hard:{goal:38,time:125,speed:14.1}};
+let difficulty="medium",points=0,combo=0,bestCombo=0,lastCollectTime=-100,roundFinished=false;
 let renderer,scene,camera,ground,portal,ring,shadow,steerTarget=null,items=[],decor=[],particles=[],playing=false,last=0,elapsed=0,score=0,level=1,goal=75,time=300,remaining=300,radius=1.15,dragging=false,prevPointer=null,activePointer=null,joystick={x:0,y:0},soundOn=true,audio=null,noticeTimer=null;
 const track=(name,extra={})=>{try{gtag('event',name,{game_name:'hole_world',...extra})}catch{}};
 const color=(hex)=>new THREE.MeshStandardMaterial({color:hex,roughness:.62,metalness:.02});
+function cutSurface(base){
+ const material=base.clone();
+ material.onBeforeCompile=shader=>{
+  shader.uniforms.uHoleCenter=cutUniforms.center;
+  shader.uniforms.uHoleRadius=cutUniforms.radius;
+  shader.vertexShader='varying vec3 vHoleWorld;\n'+shader.vertexShader.replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvHoleWorld=(modelMatrix*vec4(transformed,1.0)).xyz;');
+  shader.fragmentShader='varying vec3 vHoleWorld;\nuniform vec2 uHoleCenter;\nuniform float uHoleRadius;\n'+shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif(distance(vHoleWorld.xz,uHoleCenter)<uHoleRadius)discard;');
+ };
+ material.customProgramCacheKey=()=> 'mindora-moving-ground-hole-v2';
+ return material;
+}
+function configureRound(){const rule=MODES[difficulty];goal=rule.goal+Math.min(12,(level-1)*3);time=rule.time+Math.min(30,(level-1)*5)}
+function showBest(){try{const v=JSON.parse(localStorage.getItem('mindora-hole-world-v1')||'{}');$('best').textContent='🏆 Best: '+(v.bestPoints||0)+' points · '+(v.wins||0)+' wins'}catch{$('best').textContent='🏆 Beat your high score!'}}
 const mats={grass:color('#87c952'),grass2:color('#78b845'),edge:color('#6eaa42'),water:color('#54c9e6'),pink:color('#ff71ae'),orange:color('#ffad4c'),yellow:color('#ffe17b'),purple:color('#8e79fa'),blue:color('#5fa8fa'),mint:color('#66e5bd'),white:color('#fff2dc'),wood:color('#bd8557'),dark:color('#0b1736'),black:new THREE.MeshBasicMaterial({color:0x030611,side:THREE.DoubleSide}),ring:new THREE.MeshStandardMaterial({color:0x2b56b5,metalness:.25,roughness:.26}),rim:new THREE.MeshStandardMaterial({color:0x6ef7ff,emissive:0x147aab,emissiveIntensity:.5,metalness:.35,roughness:.18})};
 const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.SphereGeometry(1,12,9),cylGeo=new THREE.CylinderGeometry(1,1,1,12);
 function mesh(geo,mat,parent=scene){const o=new THREE.Mesh(geo,mat);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o}
@@ -38,12 +54,15 @@ function makeBox(x,y,z,sx,sy,sz,mat,parent=scene){const m=mesh(boxGeo,mat,parent
 function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.position.set(x,y,z);m.scale.setScalar(r);return m}
 function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#8cd7ee');scene.fog=new THREE.Fog('#8cd7ee',55,115);camera=new THREE.OrthographicCamera(-12,12,17,-17,.1,120);camera.position.set(0,23,39);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;container.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x8b9b65,1.65));const sun=new THREE.DirectionalLight(0xfff4d5,2.3);sun.position.set(-9,23,12);sun.castShadow=false;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
-const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,mats.water);ocean.receiveShadow=false;ground=makeBox(0,-.45,0,W,.8,D,mats.grass);ground.receiveShadow=true;makeBox(0,-.89,0,W+.3,.18,D+.3,mats.edge);
-const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=.19;disk.renderOrder=100;disk.material.depthTest=false;disk.material.depthWrite=false;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.205;ring.renderOrder=102;ring.material.depthTest=false;ring.material.depthWrite=false;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.208;inner.renderOrder=101;inner.material.depthTest=false;inner.material.depthWrite=false;shadow=holeGroup;holeGroup.position.set(0,.04,11);
+cutUniforms.center.value=new THREE.Vector2(0,11);
+const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,cutSurface(mats.water));ocean.receiveShadow=false;
+ground=makeBox(0,-.45,0,W,.8,D,cutSurface(mats.grass));ground.receiveShadow=true;
+makeBox(0,-.89,0,W+.3,.18,D+.3,cutSurface(mats.edge));
+const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-2.65;disk.renderOrder=0;disk.material.depthTest=true;disk.material.depthWrite=true;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.09;ring.renderOrder=2;ring.material.depthTest=true;ring.material.depthWrite=true;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.085;inner.renderOrder=2;inner.material.depthTest=true;inner.material.depthWrite=true;shadow=holeGroup;holeGroup.position.set(0,.04,11);
 // Lightweight portal effects: pulsing energy rings and collectible sparkles.
 effectMat=new THREE.MeshBasicMaterial({color:0x73e5f3,transparent:true,opacity:.58,depthWrite:false});
 ripple=new THREE.Mesh(new THREE.TorusGeometry(1.19,.027,6,72),effectMat);
-ripple.rotation.x=-Math.PI/2;ripple.position.y=.215;ripple.renderOrder=103;effectMat.depthTest=false;holeGroup.add(ripple);
+ripple.rotation.x=-Math.PI/2;ripple.position.y=.12;ripple.renderOrder=3;effectMat.depthTest=true;holeGroup.add(ripple);
 const sparkGeo=new THREE.OctahedronGeometry(.085,0);
 const sparkMats=[new THREE.MeshBasicMaterial({color:0xffdf8c}),new THREE.MeshBasicMaterial({color:0x8ce9fa}),new THREE.MeshBasicMaterial({color:0xff98c8})];
 sparkPool=[];
@@ -54,7 +73,7 @@ const starGeometry=new THREE.OctahedronGeometry(.042,0);
 const starColors=[0xffffff,0x92e7ff,0xffd88b,0xb9a2ff];
 swirlStars=[];
 for(let k=0;k<24;k++){
-const mat=new THREE.MeshBasicMaterial({color:starColors[k%starColors.length],transparent:true,opacity:.95,depthTest:false,depthWrite:false});
+const mat=new THREE.MeshBasicMaterial({color:starColors[k%starColors.length],transparent:true,opacity:.95,depthTest:true,depthWrite:false});
 const star=new THREE.Mesh(starGeometry,mat);star.renderOrder=105;holeGroup.add(star);
 swirlStars.push({mesh:star,phase:k/24,angle:k*2.399})
 }
@@ -66,7 +85,7 @@ p.mesh.position.set(x,.18,z);p.mesh.scale.setScalar(.65+Math.random()*.8);
 p.vx=Math.cos(angle)*(1.2+Math.random()*1.5);
 p.vz=Math.sin(angle)*(1.2+Math.random()*1.5);p.vy=1.8+Math.random()*1.3}
 }
-resize();window.addEventListener('resize',resize);container.addEventListener('pointerdown',down);window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);container.addEventListener('touchstart',e=>{if(playing&&e.cancelable)e.preventDefault()},{passive:false});container.addEventListener('touchmove',e=>{if(playing&&e.cancelable)e.preventDefault()},{passive:false});document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){playing=false;showEnd(false,'Paused','Your adventure is waiting. Tap to resume.',true)}});requestAnimationFrame(frame)}
+resize();window.addEventListener('resize',resize);container.addEventListener('pointerdown',down);window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);container.addEventListener('touchstart',e=>{if(playing&&e.cancelable)e.preventDefault()},{passive:false});container.addEventListener('touchmove',e=>{if(playing&&e.cancelable)e.preventDefault()},{passive:false});document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){playing=false;up();showEnd(false,'PAUSED','Your adventure is waiting. Tap to resume.',true)}});requestAnimationFrame(frame)}
 function resize(){const w=innerWidth,h=innerHeight,aspect=w/h;const height=w>700?19:23,width=height*aspect;camera.left=-width/2;camera.right=width/2;camera.top=height/2;camera.bottom=-height/2;camera.updateProjectionMatrix();renderer.setSize(w,h)}
 const WORLDS=[
 ['Tokyo','Japan','neon'],['Delhi','India','market'],['Shanghai','China','skyline'],['Dhaka','Bangladesh','market'],['São Paulo','Brazil','tropical'],['Cairo','Egypt','desert'],['Mexico City','Mexico','fiesta'],['Beijing','China','skyline'],['Mumbai','India','market'],['Osaka','Japan','neon'],['New York','USA','skyline'],['Karachi','Pakistan','market'],['Chongqing','China','skyline'],['Istanbul','Türkiye','harbor'],['Buenos Aires','Argentina','fiesta'],['Lagos','Nigeria','tropical'],['Manila','Philippines','tropical'],['Kolkata','India','market'],['Kinshasa','DR Congo','tropical'],['Guangzhou','China','skyline'],['Paris','France','europe'],['London','UK','europe'],['Dubai','UAE','desert'],['Singapore','Singapore','tropical'],['Seoul','South Korea','neon'],['Valencia','Spain','harbor'],['Kyoto Village','Japan','village'],['Alpine Village','Switzerland','village'],['Tuscan Village','Italy','village'],['Carpathian Village','Ukraine','village'],['Provence Village','France','village'],['Andean Village','Peru','village'],['Dutch Countryside','Netherlands','village'],['English Farm','UK','village'],['Bavarian Village','Germany','village'],['Greek Island Village','Greece','village']];
@@ -87,11 +106,11 @@ $('notice').textContent='🏙️ TOKYO 3D LANDMARK LOADED';$('notice').classList
 }
 
 function nextWorld(){let n=0;try{n=Number(localStorage.getItem('mindora-hole-world-rotation')||'0')||0;localStorage.setItem('mindora-hole-world-rotation',String(n+1))}catch{n=Math.floor(Math.random()*WORLDS.length)}worldIndex=n%WORLDS.length;world=WORLDS[worldIndex];if(new URLSearchParams(location.search).get('showcase')==='tokyo'){worldIndex=0;world=WORLDS[0]}}
-function buildWorld(){
+function buildWorld(advance=true){
 if(landmark3d){scene.remove(landmark3d);landmark3d=null}tokyoMixer=null;landmarkRequest++;
-nextWorld();actors=[];
+if(advance)nextWorld();actors=[];
 for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
-items=[];decor=[];particles=[];ground.material=world[2]==='desert'?mats.yellow:world[2]==='village'?mats.grass:level%2?mats.grass:mats.grass2;
+items=[];decor=[];particles=[];ground.material.dispose();ground.material=cutSurface(world[2]==='desert'?mats.yellow:world[2]==='village'?mats.grass:level%2?mats.grass:mats.grass2);
 const palette=[mats.pink,mats.orange,mats.yellow,mats.purple,mats.blue,mats.mint];
 const asphalt=color(world[2]==='village'?'#bfa87e':'#535e69'),pavement=color('#d9d2c3'),line=color('#fffae0'),glass=color('#bdefff'),roof=color('#f8798b'),door=color('#4a547e'),leaf=color('#51c985'),darkRoof=color('#665cc7');
 function B(parent,x,y,z,w,h,d,mat){return makeBox(x,y,z,w,h,d,mat,parent)}
@@ -336,7 +355,7 @@ else{C(g,0,1.4,0,.34,2.8,mats.wood);for(let k=0;k<4;k++)S(g,Math.cos(k*1.57)*.75
 for(let i=0;i<12;i++){const x=(Math.random()-.5)*(W-8),z=(Math.random()-.5)*(D-9);if(Math.hypot(x,z-11)<7)continue;if(vill){if(i%3===0)person(x,z,i);else animal(x,z,i)}else if(i%4===0)person(x,z,i);else if(i%3===0)landmark(x,z,i)}
 for(let i=0;i<(vill?14:7);i++){const x=(Math.random()-.5)*(W-6),z=(Math.random()-.5)*(D-6);if(Math.hypot(x,z-11)<6)continue;if(vill)animal(x,z,i);else landmark(x,z,i)}
 $('level').textContent='🌍 '+world[0].toUpperCase()+' · '+world[1].toUpperCase();
-portal.position.set(0,.04,11);if(!steerTarget)steerTarget=new THREE.Vector2(0,11);else steerTarget.set(0,11);radius=1.15;portal.scale.setScalar(radius);score=0;remaining=time;elapsed=0;updateHud()
+portal.position.set(0,.04,11);if(!steerTarget)steerTarget=new THREE.Vector2(0,11);else steerTarget.set(0,11);radius=1.15;portal.scale.setScalar(radius);cutUniforms.center.value.set(0,11);cutUniforms.radius.value=radius*.89;score=0;points=0;combo=0;bestCombo=0;lastCollectTime=-100;roundFinished=false;remaining=time;elapsed=0;updateHud()
 }
 // Stable screen-space steering. Finger deltas never depend on the moving follow camera.
 // Continuous virtual thumbstick: movement persists while finger is held still.
@@ -371,9 +390,9 @@ stickDirection.set(0,0);stickSmoothed.set(0,0)
 }
 function beep(f=420){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.type='sine';o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*1.4,t+.1);g.gain.setValueAtTime(.045,t);g.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.17)}catch{}}
 function announce(s){$('notice').textContent=s;$('notice').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').classList.remove('show'),1000)}
-function updateHud(){$('time').textContent=Math.max(0,Math.ceil(remaining));$('score').textContent=score+' / '+goal;$('size').textContent='LV '+Math.min(5,1+Math.floor(score/8));$('fill').style.width=Math.min(100,score/goal*100)+'%';$('level').textContent='🌍 '+world[0].toUpperCase()+' · '+world[1].toUpperCase()+' · LEVEL '+level}
+function updateHud(){$('time').textContent=Math.max(0,Math.ceil(remaining));$('score').textContent=score+' / '+goal;$('size').textContent='LV '+(1+Math.round((radius-1.15)/.41));$('points').textContent=points;$('combo').textContent='COMBO ×'+Math.max(1,combo);$('fill').style.width=Math.min(100,score/goal*100)+'%';$('level').textContent='🌍 '+world[0].toUpperCase()+' · '+world[1].toUpperCase()+' · LEVEL '+level}
 function collect(o){
-o.userData.collected=true;o.userData.fall=0;
+o.userData.collected=true;o.userData.fall=0;o.userData.vy=0;
 o.userData.startX=o.position.x;o.userData.startZ=o.position.z;
 o.userData.startY=o.position.y;
 o.userData.baseScale=o.scale.clone();
@@ -382,10 +401,13 @@ window.holeBurst?.(o.position.x,o.position.z,o.userData.size);
 function finishCollect(o){
 if(o.userData.scored)return;
 o.userData.scored=true;score++;
-beep(420+Math.min(score,30)*12);
-if(score===12||score===28||score===48||score===65){radius+=.36;announce(score===28?'🚗 CARS UNLOCKED!':'PORTAL GROWS! ✨');beep(780)}
+combo=elapsed-lastCollectTime<4.2?combo+1:1;bestCombo=Math.max(bestCombo,combo);lastCollectTime=elapsed;
+points+=Math.round((10+(o.userData.size>1?15:0))*Math.min(combo,5));
+if(combo>1&&combo%5===0){remaining=Math.min(time+25,remaining+5);announce('🔥 '+combo+' COMBO · +5 SEC');$('bonus').classList.add('hot');setTimeout(()=>$('bonus').classList.remove('hot'),450)}
+beep(420+Math.min(combo,12)*27);
+if(score===8||score===16||score===25||score===33){radius+=.41;announce(score===16?'🚗 CARS UNLOCKED!':'🌀 PORTAL LEVEL UP!');beep(780)}
 updateHud();
-if(score>=goal){playing=false;showEnd(true,'LEVEL COMPLETE!','Amazing! You swallowed '+score+' objects. Ready for the next city?')}
+if(score>=goal&&!roundFinished){roundFinished=true;playing=false;showEnd(true,'LEVEL COMPLETE!','You earned '+points+' points with a ×'+bestCombo+' best combo. Your next city awaits!')}
 }
 function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000||.016);last=now;if(playing){// React immediately to direction reversals; smooth only minor thumb jitter.
 const dot=stickSmoothed.dot(stickDirection);
@@ -397,32 +419,73 @@ const direction=keyboard.lengthSq()>0?keyboard:stickDirection;
 stickSmoothed.lerp(direction,steering);
 if(direction.lengthSq()<.0001)stickSmoothed.set(0,0);
 if(dragging||keyboard.lengthSq()>0){
-const speed=matchMedia('(pointer:fine)').matches?11.8:13.4;
+const speed=MODES[difficulty].speed;
 portal.position.x=THREE.MathUtils.clamp(portal.position.x+stickSmoothed.x*speed*dt,-W/2+radius,W/2-radius);
 portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*dt,-D/2+radius,D/2-radius)
-}remaining-=dt;elapsed+=dt;if(remaining<=0){remaining=0;playing=false;showEnd(false,'TIME IS UP!','You collected '+score+' of '+goal+' treasures. Try again!')}updateHud()}
+}remaining-=dt;elapsed+=dt;if(combo>0&&elapsed-lastCollectTime>4.2)combo=0;if(remaining<=0){remaining=0;playing=false;if(!roundFinished){roundFinished=true;showEnd(false,'TIME IS UP!','You earned '+points+' points and collected '+score+' / '+goal+'. Try again!')}}updateHud()}
 if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.z+=dt*.6;
 for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math.pow(1-t,.72);const a=star.angle+now*.0028+t*7.5;star.mesh.position.set(Math.cos(a)*r,.227+Math.sin(t*Math.PI)*.015,Math.sin(a)*r);const scale=Math.max(.12,(1-t)*1.5);star.mesh.scale.setScalar(scale);star.mesh.material.opacity=Math.min(1,(1-t)*1.5)}
-ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);
+ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);cutUniforms.center.value.set(portal.position.x,portal.position.z);cutUniforms.radius.value=radius*.89;
 for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*9);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(23-camera.position.y)*follow;camera.position.z+=(portal.position.z+28-camera.position.z)*follow;camera.lookAt(camera.position.x,0,camera.position.z-28);// Hide distant detailed architecture, keeping a small visual margin around the camera.
 // Skip expensive per-mesh rendering for buildings outside the playable viewport.
 for(const d of decor){const dx=d.position.x-portal.position.x,dz=d.position.z-portal.position.z;d.visible=Math.abs(dx)<34&&Math.abs(dz)<36}
 for(const o of items){if(o.userData.collected){
-const u=o.userData;u.fall=Math.min(1,u.fall+dt*1.12);
-const t=u.fall,ease=t*t*(3-2*t);
-// First pull toward the hole, then tip and sink below the ground plane.
-o.position.x=u.startX+(portal.position.x-u.startX)*ease;
-o.position.z=u.startZ+(portal.position.z-u.startZ)*ease;
-o.position.y=u.startY-(.35+u.size*2.3)*ease;
-o.rotation.x+=dt*2.6;o.rotation.z+=dt*1.9;
-const shrink=Math.max(.005,1-Math.pow(Math.max(0,(t-.45)/.55),2)*.99);
-o.scale.copy(u.baseScale).multiplyScalar(shrink);
-if(t>=1){finishCollect(o);scene.remove(o)}
-continue}if(!playing)continue;const d=Math.hypot(o.position.x-portal.position.x,o.position.z-portal.position.z);if(d<radius*.84&&o.userData.size<radius*.8)collect(o)}
+const u=o.userData;
+if(!playing&&remaining>0)continue;
+u.fall+=dt;u.vy=Math.min(15,u.vy+18*dt);
+const magnet=1-Math.exp(-dt*11);
+o.position.x+=(portal.position.x-o.position.x)*magnet;
+o.position.z+=(portal.position.z-o.position.z)*magnet;
+o.position.y-=u.vy*dt;
+o.rotation.x+=dt*(2.1+u.vy*.18);o.rotation.z+=dt*(1.4+u.vy*.12);
+if(o.position.y < -1.7){const shrink=Math.max(.35,1+(o.position.y+1.7)*.12);o.scale.copy(u.baseScale).multiplyScalar(shrink)}
+if(o.position.y < -3.8){finishCollect(o);scene.remove(o)}
+continue}if(!playing)continue;const d=Math.hypot(o.position.x-portal.position.x,o.position.z-portal.position.z);if(d<radius*.78&&o.userData.size<radius*.8)collect(o)}
 renderer.render(scene,camera)}
-function showEnd(won,title,description,paused=false){$('overlay').classList.remove('hidden');$('face').textContent=won?'🏆🌈':paused?'⏸️🌀':'⏰🍭';$('heading').textContent=title;$('description').textContent=description;$('play').textContent=won?'NEXT LEVEL ▶':paused?'RESUME ▶':'TRY AGAIN ▶';if(!paused){track('game_complete',{score,level,success:won,duration_seconds:Math.round(elapsed)});if(won){try{const key='mindora-hole-world-v1',v=JSON.parse(localStorage.getItem(key)||'{}');v.best=Math.max(v.best||0,score);v.level=Math.max(v.level||1,level+1);v.wins=(v.wins||0)+1;localStorage.setItem(key,JSON.stringify(v))}catch{}window.MindoraQuest?.complete()}}}
-$('play').onclick=()=>{try{if(!window.__holeReady){$('description').textContent='The game is still loading. Please wait a moment.';return}const title=$('heading').textContent;$('overlay').classList.add('hidden');if(title==='LEVEL COMPLETE!'){level++;goal=75+Math.min(level-1,6)*10;time=300+Math.min(level-1,5)*25;buildWorld()}else if(title==='TIME IS UP!'){buildWorld()}playing=true;last=performance.now();track('game_start',{level})}catch(err){console.error('Hole World start error',err);$('overlay').classList.remove('hidden');$('description').textContent='Could not start: '+(err?.message||String(err));$('play').textContent='TRY AGAIN ↻'}};
+function showEnd(won,title,description,paused=false){
+ $('overlay').classList.remove('hidden');$('face').textContent=won?'🏆🌈':paused?'⏸️🌀':'⏰🍭';
+ $('heading').textContent=title;$('description').textContent=description;
+ $('play').textContent=won?'NEXT CITY ▶':paused?'RESUME ▶':'TRY AGAIN ↻';
+ $('share').hidden=paused||title==='HOLE WORLD';
+ $('difficulty').hidden=paused;
+ showBest();
+ if(!paused){
+  track('game_complete',{score,points,difficulty,level,success:won,duration_seconds:Math.round(elapsed),best_combo:bestCombo});
+  if(won)track('game_win',{score,points,difficulty,level});
+  try{const key='mindora-hole-world-v1',v=JSON.parse(localStorage.getItem(key)||'{}');v.best=Math.max(v.best||0,score);v.bestPoints=Math.max(v.bestPoints||0,points);v.bestCombo=Math.max(v.bestCombo||0,bestCombo);v.level=Math.max(v.level||1,won?level+1:level);if(won)v.wins=(v.wins||0)+1;localStorage.setItem(key,JSON.stringify(v))}catch{}
+  if(won)window.MindoraQuest?.complete();
+ }
+}
+$('play').onclick=()=>{try{
+ if(!window.__holeReady){$('description').textContent='Game is still loading, please reload if it does not start.';return}
+ const title=$('heading').textContent;
+ $('overlay').classList.add('hidden');
+ if(title==='LEVEL COMPLETE!'){level++;configureRound();buildWorld(true)}
+ else if(title==='TIME IS UP!'){configureRound();buildWorld(false);track('game_restart',{difficulty,level})}
+ else if(title==='HOLE WORLD'){configureRound();remaining=time;updateHud()}
+ playing=true;last=performance.now();track('game_start',{difficulty,level})
+}catch(err){console.error('Hole World start error',err);$('overlay').classList.remove('hidden');$('description').textContent='Could not start: '+(err?.message||String(err));$('play').textContent='TRY AGAIN ↻'}};
+$('pause').onclick=()=>{if(playing){playing=false;up();showEnd(false,'PAUSED','Your city is waiting. Resume whenever you are ready.',true)}};
+window.addEventListener('keydown',e=>{if(e.code==='Escape'&&playing){playing=false;up();showEnd(false,'PAUSED','Your city is waiting. Resume whenever you are ready.',true)}});
 $('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'🔊':'🔇'};
-try{const v=JSON.parse(localStorage.getItem('mindora-hole-world-v1')||'{}');if(Number.isFinite(v.level)&&v.level>1){level=Math.min(v.level,20);goal=75+Math.min(level-1,6)*10;time=300+Math.min(level-1,5)*25}}catch{}
+document.querySelectorAll('#difficulty button').forEach(button=>button.addEventListener('click',()=>{
+ difficulty=button.dataset.mode;
+ document.querySelectorAll('#difficulty button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+ try{localStorage.setItem('mindora-hole-world-mode',difficulty)}catch{}
+ track('difficulty_select',{difficulty,level})
+}));
+$('share').onclick=async()=>{
+ const url='https://playmindora.com/hole-world.html?utm_source=player_share&utm_medium=social&utm_campaign=hole_world_challenge';
+ const message='🌀 I scored '+points+' points on Hole World ('+difficulty+')! Can you beat my score?';
+ try{if(navigator.share)await navigator.share({title:'Hole World Challenge',text:message,url});
+ else if(navigator.clipboard){await navigator.clipboard.writeText(message+' '+url);$('share').textContent='✓ CHALLENGE LINK COPIED';setTimeout(()=>$('share').textContent='↗ SHARE YOUR SCORE',1700)}
+ else prompt('Copy your challenge',message+' '+url);
+ track('share_result',{game_name:'hole_world',difficulty,score:points})
+ }catch(e){if(e.name!=='AbortError')console.warn('Could not share result',e)}
+};
+try{const v=JSON.parse(localStorage.getItem('mindora-hole-world-v1')||'{}');if(Number.isFinite(v.level)&&v.level>1)level=Math.min(v.level,20)}catch{}
+try{const savedMode=localStorage.getItem('mindora-hole-world-mode');if(MODES[savedMode])difficulty=savedMode}catch{}
+document.querySelectorAll('#difficulty button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===difficulty)));
+configureRound();showBest();
 try{init();buildWorld();window.__holeReady=true;launchButton.disabled=false;launchButton.textContent='LET\'S PLAY ▶'}catch(e){console.error('Hole World init failed',e);$('error').style.display='block';$('error').innerHTML='The 3D game could not start on this browser. Try refreshing or using Safari / Chrome.<p><a href="./">Back to Mindora Games</a></p>'}
 </script><script src="./questbook.js"></script><script src="./player-profile.js"></script></body></html>
