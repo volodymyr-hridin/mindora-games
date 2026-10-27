@@ -55,7 +55,7 @@ function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.pos
 function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b7e2e5');scene.fog=new THREE.Fog('#b7e2e5',50,100);camera=new THREE.OrthographicCamera(-12,12,12,-12,.1,120);camera.position.set(0,20,37);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.35));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;container.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xe5f7ff,0x8eab86,1.32));const sun=new THREE.DirectionalLight(0xffedcf,2.4);sun.position.set(-12,28,14);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 cutUniforms.center.value=new THREE.Vector2(0,11);
-const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,cutSurface(mats.water));ocean.receiveShadow=false;
+const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,cutSurface(color('#7bbabf')));ocean.receiveShadow=false;
 ground=makeBox(0,-.45,0,W,.8,D,cutSurface(color('#98bd87')));ground.receiveShadow=true;
 makeBox(0,-.89,0,W+.3,.18,D+.3,cutSurface(mats.edge));
 const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-2.65;disk.renderOrder=0;disk.material.depthTest=true;disk.material.depthWrite=true;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.09;ring.renderOrder=2;ring.material.depthTest=true;ring.material.depthWrite=true;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.085;inner.renderOrder=2;inner.material.depthTest=true;inner.material.depthWrite=true;shadow=holeGroup;holeGroup.position.set(0,.04,11);
@@ -110,7 +110,7 @@ function buildWorld(advance=true){
 if(landmark3d){scene.remove(landmark3d);landmark3d=null}tokyoMixer=null;landmarkRequest++;
 if(advance)nextWorld();actors=[];
 for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
-items=[];decor=[];particles=[];ground.material.dispose();ground.material=cutSurface(world[2]==='desert'?mats.yellow:world[2]==='village'?mats.grass:level%2?mats.grass:mats.grass2);
+items=[];decor=[];particles=[];ground.material.dispose();ground.material=cutSurface(color(world[2]==='desert'?'#d8bf89':world[2]==='village'?'#99b58a':level%2?'#98bd87':'#93b8a4'));
 const palette=['#d8a48d','#e8c9a7','#b5bdcc','#9ec4b5','#8bafc8','#d5a9ae'].map(color);
 const asphalt=color(world[2]==='village'?'#b8a68c':'#77838e'),pavement=color('#d9d6cb'),line=color('#f2ece1'),glass=color('#9bc9d3'),roof=color('#b86b71'),door=color('#47576a'),leaf=color('#6aa982'),darkRoof=color('#63758b');
 function B(parent,x,y,z,w,h,d,mat){return makeBox(x,y,z,w,h,d,mat,parent)}
