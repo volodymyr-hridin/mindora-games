@@ -28,6 +28,7 @@ catch(primaryError){try{THREE=await import('https://unpkg.com/three@0.170.0/buil
 catch(secondaryError){document.getElementById('error').style.display='block';document.getElementById('error').innerHTML='Unable to load the 3D engine. Please check your connection and refresh the page.<p><a href="./">Back to Mindora Games</a></p>';throw secondaryError}}
 const $=id=>document.getElementById(id),W=62,D=90,container=$('game');
 let ripple,effectMat,sparkPool=[],sparkCursor=0,swirlStars=[];
+const solidPlacements=[];
 const cutUniforms={center:{value:null},radius:{value:1}};
 const MODES={easy:{goal:24,time:170,speed:12.3},medium:{goal:30,time:145,speed:13.1},hard:{goal:38,time:125,speed:14.1}};
 let difficulty="medium",points=0,combo=0,bestCombo=0,lastCollectTime=-100,roundFinished=false;
@@ -118,7 +119,6 @@ function B(parent,x,y,z,w,h,d,mat){return makeBox(x,y,z,w,h,d,mat,parent)}
 function C(parent,x,y,z,r,h,mat){const o=mesh(cylGeo,mat,parent);o.position.set(x,y,z);o.scale.set(r,h,r);return o}
 function S(parent,x,y,z,r,mat){return ball(x,y,z,r,mat,parent)}
 function group(x,z){const g=new THREE.Group();scene.add(g);g.position.set(x,.05,z);return g}
-const solidPlacements=[];
 function addDecor(g){decor.push(g);return g}
 function addSolid(g,r=2.4){solidPlacements.push({x:g.position.x,z:g.position.z,r});return addDecor(g)}
 function clearForItem(x,z,r=.7){return solidPlacements.every(p=>Math.hypot(x-p.x,z-p.z)>p.r+r)&&items.every(p=>Math.hypot(x-p.position.x,z-p.position.z)>1.15)}
