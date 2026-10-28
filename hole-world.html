@@ -123,8 +123,10 @@ function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b7e2e
 scene.add(new THREE.HemisphereLight(0xe5f7ff,0x8eab86,1.32));const sun=new THREE.DirectionalLight(0xffedcf,2.4);sun.position.set(-12,28,14);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 cutUniforms.center.value=new THREE.Vector2(0,11);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,cutSurface(color('#7bbabf')));ocean.receiveShadow=false;
-ground=makeBox(0,-.45,0,W+65,.8,D+65,cutSurface(makeTerrainMaterial('#98bd87')));ground.receiveShadow=true;
-makeBox(0,-.89,0,W+65.3,.18,D+65.3,cutSurface(mats.edge));
+// Deliberate, visible edge of a compact island arena, rather than infinite empty terrain.
+ground=makeBox(0,-.45,0,W+2,.8,D+2,cutSurface(makeTerrainMaterial('#98bd87')));ground.receiveShadow=true;
+makeBox(0,-1.18,0,W+2.25,1.06,D+2.25,cutSurface(color('#647f70')));
+makeBox(0,-1.83,0,W+2.45,.22,D+2.45,color('#49675f'));
 const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-2.65;disk.renderOrder=0;disk.material.depthTest=true;disk.material.depthWrite=true;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.09;ring.renderOrder=2;ring.material.depthTest=true;ring.material.depthWrite=true;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.085;inner.renderOrder=2;inner.material.depthTest=true;inner.material.depthWrite=true;// A true visible well below the cut ground, with cylindrical interior and luminous depth rings.
 const shaftMat=new THREE.MeshStandardMaterial({color:0x132545,roughness:.39,metalness:.18,side:THREE.BackSide});
 const shaft=mesh(new THREE.CylinderGeometry(.91,.91,2.75,64,1,true),shaftMat,holeGroup);
@@ -599,22 +601,53 @@ for(let i=0;i<11;i++){
  for(let j=0;j<3;j++)S(g,Math.cos(j*2.09)*.8,.26,Math.sin(j*2.09)*.7,.25,leaf);
  addDecor(g)
 }
-// Background vegetation and rolling landforms hide the playable boundary without affecting movement.
-const borderLeaf=color(world[2]==='desert'?'#b3a781':'#669878');
-const borderTrunk=color('#8d7961');
-for(let k=0;k<34;k++){
- const edge=k%4,progress=((k*0.61803398875)%1);
- let x,z;
- if(edge===0){x=-W/2-5-Math.random()*13;z=(progress-.5)*(D+45)}
- else if(edge===1){x=W/2+5+Math.random()*13;z=(progress-.5)*(D+45)}
- else if(edge===2){z=-D/2-5-Math.random()*13;x=(progress-.5)*(W+45)}
- else{z=D/2+5+Math.random()*13;x=(progress-.5)*(W+45)}
+// Terrain relief: rocky rises, slopes, layered hills and patches of vegetation.
+const rockyMaterials=[color('#91a397'),color('#a5ae95'),color('#b9a990'),color('#6d8a81')];
+const hillMaterials=[color(world[2]==='desert'?'#c0a172':'#709b7d'),color(world[2]==='desert'?'#ddc18a':'#87b393'),color(world[2]==='desert'?'#aa9676':'#acc6a0')];
+const terrainGeo=new THREE.IcosahedronGeometry(1,1);
+function hill(x,z,sx,sy,sz,idx){
  const g=group(x,z);
- const stump=mesh(cylGeo,borderTrunk,g);stump.position.y=.65;stump.scale.set(.22,1.35,.22);
- const crown=mesh(new THREE.IcosahedronGeometry(1.05+(k%4)*.17,1),borderLeaf,g);
- crown.position.y=1.9+(k%3)*.15;crown.scale.y=.8;
+ const bulk=mesh(terrainGeo,hillMaterials[idx%hillMaterials.length],g);
+ bulk.position.y=Math.max(.05,sy*.5);bulk.scale.set(sx,sy,sz);
+ bulk.rotation.y=idx*.73;
+ bulk.castShadow=renderer.shadowMap.enabled;
+ for(let p=0;p<3;p++){
+  const rock=mesh(terrainGeo,rockyMaterials[(idx+p)%rockyMaterials.length],g);
+  const a=(idx*1.42+p*2.09);
+  rock.position.set(Math.cos(a)*sx*.62,.12+sy*.21,Math.sin(a)*sz*.65);
+  rock.scale.set(.25+sx*.12,.16+sy*.13,.31+sz*.1);
+  rock.rotation.set(p*.23,a,p*.12)
+ }
  addDecor(g)
 }
+const edgeFenceMaterial=color(world[2]==='desert'?'#d1b889':'#8eafa1');
+const borderBoulders=color(world[2]==='desert'?'#9f8870':'#657e77');
+const rimGeo=new THREE.IcosahedronGeometry(1,1);
+for(let i=0;i<58;i++){
+ const side=i%4,t=((i*0.61803398875)%1);
+ const x=side===0?-W/2+.55:side===1?W/2-.55:(t-.5)*(W-3.2);
+ const z=side===2?-D/2+.55:side===3?D/2-.55:(t-.5)*(D-3.2);
+ const g=group(x,z);
+ const height=.5+((i*7)%9)*.11;
+ const stone=mesh(rimGeo,i%5===0?borderBoulders:edgeFenceMaterial,g);
+ stone.scale.set(.73,height,.82);
+ stone.position.y=height*.64;
+ stone.rotation.set((i%3)*.1,(i*3)%7,(i%4)*.12);
+ addDecor(g)
+}
+// Sloping mounds are always inside the arena, and clear of major roads/houses.
+for(let i=0;i<27;i++){
+ const a=i*2.39996,r=16+(i%6)*2.6;
+ const x=Math.sin(a)*r*.94,z=Math.cos(a)*r*1.25;
+ if(Math.abs(x)>W/2-4||Math.abs(z)>D/2-4)continue;
+ if(Math.hypot(x,z-11)<9||solidPlacements.some(p=>Math.hypot(p.x-x,p.z-z)<4.5))continue;
+ const nearRoad=[-18,1,20].some(l=>Math.abs(x-avenueX(z,l))<3.6)||[-29,-5,21].some(l=>Math.abs(z-streetZ(x,l))<3.4);
+ if(nearRoad)continue;
+ hill(x,z,1.35+i%3*.4,.48+(i%4)*.16,1.35+(i%2)*.45,i)
+}
+// A clearly delimited rim, stopping movement before the empty area.
+for(const x of [-W/2,W/2]){const g=group(x,0);B(g,0,.14,0,.26,.31,D,edgeFenceMaterial);addDecor(g)}
+for(const z of [-D/2,D/2]){const g=group(0,z);B(g,0,.14,0,W,.31,.26,edgeFenceMaterial);addDecor(g)}
 if(world[0]==='Tokyo'){for(let j=0;j<18;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}}
 for(let i=0;i<110;i++){
  for(let attempt=0;attempt<36;attempt++){
@@ -709,8 +742,8 @@ stickSmoothed.lerp(direction,steering);
 if(direction.lengthSq()<.0001)stickSmoothed.set(0,0);
 if(dragging||keyboard.lengthSq()>0){
 const speed=MODES[difficulty].speed;
-portal.position.x=THREE.MathUtils.clamp(portal.position.x+stickSmoothed.x*speed*dt,-W/2+radius,W/2-radius);
-portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*dt,-D/2+radius,D/2-radius)
+portal.position.x=THREE.MathUtils.clamp(portal.position.x+stickSmoothed.x*speed*dt,-W/2+radius+1.2,W/2-radius-1.2);
+portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*dt,-D/2+radius+1.2,D/2-radius-1.2)
 }remaining-=dt;elapsed+=dt;if(combo>0&&elapsed-lastCollectTime>4.2)combo=0;if(remaining<=0){remaining=0;playing=false;if(!roundFinished){roundFinished=true;showEnd(false,'TIME IS UP!','You earned '+points+' points and collected '+score+' / '+goal+'. Try again!')}}hudClock+=dt;if(hudClock>=.12){hudClock=0;updateHud()}}
 if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.y+=dt*.6;for(let i=0;i<vortexRings.length;i++)vortexRings[i].rotation.z+=dt*(i%2?-0.8:0.7);
 for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math.pow(1-t,.72);const a=star.angle+now*.0028+t*7.5;star.mesh.position.set(Math.cos(a)*r,.227+Math.sin(t*Math.PI)*.015,Math.sin(a)*r);const scale=Math.max(.12,(1-t)*1.5);star.mesh.scale.setScalar(scale);star.mesh.material.opacity=Math.min(1,(1-t)*1.5)}
