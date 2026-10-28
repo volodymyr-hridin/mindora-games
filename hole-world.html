@@ -123,8 +123,8 @@ function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b7e2e
 scene.add(new THREE.HemisphereLight(0xe5f7ff,0x8eab86,1.32));const sun=new THREE.DirectionalLight(0xffedcf,2.4);sun.position.set(-12,28,14);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 cutUniforms.center.value=new THREE.Vector2(0,11);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,cutSurface(color('#7bbabf')));ocean.receiveShadow=false;
-ground=makeBox(0,-.45,0,W,.8,D,cutSurface(makeTerrainMaterial('#98bd87')));ground.receiveShadow=true;
-makeBox(0,-.89,0,W+.3,.18,D+.3,cutSurface(mats.edge));
+ground=makeBox(0,-.45,0,W+65,.8,D+65,cutSurface(makeTerrainMaterial('#98bd87')));ground.receiveShadow=true;
+makeBox(0,-.89,0,W+65.3,.18,D+65.3,cutSurface(mats.edge));
 const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-2.65;disk.renderOrder=0;disk.material.depthTest=true;disk.material.depthWrite=true;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.09;ring.renderOrder=2;ring.material.depthTest=true;ring.material.depthWrite=true;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.085;inner.renderOrder=2;inner.material.depthTest=true;inner.material.depthWrite=true;// A true visible well below the cut ground, with cylindrical interior and luminous depth rings.
 const shaftMat=new THREE.MeshStandardMaterial({color:0x132545,roughness:.39,metalness:.18,side:THREE.BackSide});
 const shaft=mesh(new THREE.CylinderGeometry(.91,.91,2.75,64,1,true),shaftMat,holeGroup);
@@ -532,37 +532,88 @@ const vermilion=color('#e84c45'),lanternGlow=color('#ffe1a0'),vendingBlue=color(
 function toriiGate(x,z){const g=group(x,z);for(const xx of [-1.05,1.05])C(g,xx,1.45,0,.15,2.9,vermilion);B(g,0,2.85,0,2.95,.3,.35,vermilion);B(g,0,2.45,0,2.6,.18,.25,mats.dark);B(g,0,3.08,0,3.15,.1,.42,mats.dark);addDecor(g)}
 function vendingMachine(x,z,i){const g=group(x,z);B(g,0,1,0,1.15,2,.82,i%2?vendingBlue:vermilion);B(g,0,1.26,.43,.88,1.05,.06,mats.white);for(let row=0;row<3;row++)for(let col=0;col<4;col++)S(g,-.3+col*.2,1.62-row*.3,.48,.07,palette[(row+col+i)%6]);B(g,.31,.54,.46,.16,.24,.04,mats.dark);B(g,0,.23,.46,.65,.13,.04,mats.dark);addDecor(g)}
 function lanternStreet(x,z){const g=group(x,z);C(g,0,1.35,0,.075,2.7,mats.dark);B(g,.42,2.53,0,.84,.075,.075,mats.dark);for(const dx of [.18,.68]){const l=mesh(new THREE.CylinderGeometry(.2,.2,.42,10),lanternGlow,g);l.position.set(dx,2.18,0);C(g,dx,2.44,0,.21,.05,vermilion);C(g,dx,1.93,0,.21,.05,vermilion)}addDecor(g)}
-// Build coherent neighborhoods aligned with roads, rather than scattering houses over the street grid.
-const avenuesX=[-21,-7,7,21],streetsZ=[-30,-14,2,18,34];
-for(const x of avenuesX){
- const g=group(x,0);
- B(g,0,.012,0,3.55,.085,D-3,pavement);
- B(g,0,.067,0,2.65,.07,D-3,asphalt);
- for(let z=-41;z<43;z+=6.7)B(g,0,.108,z,.08,.016,2.3,line);
- addDecor(g)
+// Curving village avenues with flowing side streets and uneven garden plots.
+// Layout stays fully resident; camera never hides entire scenery groups during movement.
+function avenueX(z,lane){return lane+1.65*Math.sin(z*.055+lane*.27)+.85*Math.sin(z*.12+lane*.13)}
+function streetZ(x,lane){return lane+1.55*Math.sin(x*.074+lane*.09)+.48*Math.cos(x*.19)}
+function makeRoad(orientation,axis,roadWidth){
+ const verts=[],norms=[],uvs=[],indices=[],steps=74;
+ const stepsize=(orientation==='vertical'?D-6:W-6)/steps;
+ for(let i=0;i<=steps;i++){
+  const t=i/steps;
+  const a=orientation==='vertical'?-D/2+3+t*(D-6):-W/2+3+t*(W-6);
+  const center=orientation==='vertical'?new THREE.Vector2(avenueX(a,axis),a):new THREE.Vector2(a,streetZ(a,axis));
+  const a2=a+.05;
+  const next=orientation==='vertical'?new THREE.Vector2(avenueX(a2,axis),a2):new THREE.Vector2(a2,streetZ(a2,axis));
+  const normal=new THREE.Vector2(-(next.y-center.y),next.x-center.x).normalize();
+  for(const side of [-1,1]){
+   const x=center.x+normal.x*roadWidth*.5*side,z=center.y+normal.y*roadWidth*.5*side;
+   verts.push(x,.085,z);norms.push(0,1,0);uvs.push(side===-1?0:1,t*10)
+  }
+  if(i<steps){const k=i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2)}
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+ geo.setAttribute('normal',new THREE.Float32BufferAttribute(norms,3));
+ geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geo.setIndex(indices);
+ const m=mesh(geo,asphalt);m.receiveShadow=true;decor.push(m);
+ for(let i=2;i<steps-2;i+=7){
+  const a=orientation==='vertical'?-D/2+3+i*stepsize:-W/2+3+i*stepsize;
+  const tangent=orientation==='vertical'?new THREE.Vector2((avenueX(a+.2,axis)-avenueX(a-.2,axis))/.4,1).normalize():new THREE.Vector2(1,(streetZ(a+.2,axis)-streetZ(a-.2,axis))/.4).normalize();
+  const center=orientation==='vertical'?new THREE.Vector2(avenueX(a,axis),a):new THREE.Vector2(a,streetZ(a,axis));
+  const dash=makeBox(center.x,.12,center.y,.10,.013,1.05,line);
+  dash.rotation.y=Math.atan2(tangent.x,tangent.y);decor.push(dash)
+ }
 }
-for(const z of streetsZ){
- const g=group(0,z);
- B(g,0,.016,0,W-3,.085,3.55,pavement);
- B(g,0,.07,0,W-3,.07,2.65,asphalt);
- for(let x=-29;x<30;x+=6.7)B(g,x,.112,0,2.3,.016,.08,line);
- addDecor(g)
-}
+for(const x of [-18,1,20])makeRoad('vertical',x,3.8);
+for(const z of [-29,-5,21])makeRoad('horizontal',z,3.55);
+// Small curated building clusters and landscaped pockets instead of square city blocks.
 let seed=0;
-for(const x of [-28,-14,0,14,28])for(const z of [-38,-22,-6,10,26,42]){
- if(Math.hypot(x,z-11)<10)continue;
- const idx=seed++,px=x+(Math.random()-.5)*1.2,pz=z+(Math.random()-.5)*1.2;
+const districtSpots=[];
+for(let row=0;row<7;row++)for(let col=0;col<4;col++){
+ const z=-35+row*12+((col%2)*1.5),x=-26+col*17.1+(row%2)*2.1;
+ if(Math.hypot(x,z-11)<9)continue;
+ const nearVertical=[-18,1,20].some(l=>Math.abs(x-avenueX(z,l))<4.2);
+ const nearHorizontal=[-29,-5,21].some(l=>Math.abs(z-streetZ(x,l))<4.4);
+ if(nearVertical||nearHorizontal)continue;
+ const idx=seed++,px=x+(Math.random()-.5)*2.6,pz=z+(Math.random()-.5)*2.1;
+ districtSpots.push({x:px,z:pz});
  if(world[2]==='village'){
-  if(idx%4===0)house(px,pz,idx);
-  else if(idx%3===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}
-  else if(idx%5===0)house(px,pz,idx);else tree(px,pz,idx)
+  if(idx%3===0)house(px,pz,idx);else tree(px,pz,idx)
  }else if(world[0]==='Tokyo'){
-  if(idx%6===0)sakura(px,pz,idx);
+  if(idx%5===0)sakura(px,pz,idx);
   else if(idx%3===0)tokyoFacade(px,pz,idx);
   else house(px,pz,idx)
- }else if(idx%3===0)house(px,pz,idx);
- else if(idx%7===0){tree(px-1,pz,idx);tree(px+1,pz+.7,idx)}
- else building(px,pz,idx)
+ }else if(idx%4===0)building(px,pz,idx);
+ else if(idx%3===0)tree(px,pz,idx);
+ else house(px,pz,idx)
+}
+// Garden islands follow the curved roads and remain visible as part of the level.
+const grassIsland=color(world[2]==='desert'?'#c4ad75':'#85b693');
+for(let i=0;i<11;i++){
+ const x=-25+(i%4)*16.5,z=-35+Math.floor(i/4)*28;
+ if(Math.hypot(x,z-11)<7||solidPlacements.some(p=>Math.hypot(p.x-x,p.z-z)<4))continue;
+ const g=group(x,z);
+ const patch=mesh(new THREE.CircleGeometry(2.2+i%3*.45,24),grassIsland,g);
+ patch.rotation.x=-Math.PI/2;patch.scale.y=.65;patch.position.y=.095;
+ for(let j=0;j<3;j++)S(g,Math.cos(j*2.09)*.8,.26,Math.sin(j*2.09)*.7,.25,leaf);
+ addDecor(g)
+}
+// Background vegetation and rolling landforms hide the playable boundary without affecting movement.
+const borderLeaf=color(world[2]==='desert'?'#b3a781':'#669878');
+const borderTrunk=color('#8d7961');
+for(let k=0;k<34;k++){
+ const edge=k%4,progress=((k*0.61803398875)%1);
+ let x,z;
+ if(edge===0){x=-W/2-5-Math.random()*13;z=(progress-.5)*(D+45)}
+ else if(edge===1){x=W/2+5+Math.random()*13;z=(progress-.5)*(D+45)}
+ else if(edge===2){z=-D/2-5-Math.random()*13;x=(progress-.5)*(W+45)}
+ else{z=D/2+5+Math.random()*13;x=(progress-.5)*(W+45)}
+ const g=group(x,z);
+ const stump=mesh(cylGeo,borderTrunk,g);stump.position.y=.65;stump.scale.set(.22,1.35,.22);
+ const crown=mesh(new THREE.IcosahedronGeometry(1.05+(k%4)*.17,1),borderLeaf,g);
+ crown.position.y=1.9+(k%3)*.15;crown.scale.y=.8;
+ addDecor(g)
 }
 if(world[0]==='Tokyo'){for(let j=0;j<18;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}}
 for(let i=0;i<110;i++){
