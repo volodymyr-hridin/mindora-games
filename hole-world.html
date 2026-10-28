@@ -27,14 +27,33 @@ try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.m
 catch(primaryError){try{THREE=await import('https://unpkg.com/three@0.170.0/build/three.module.js')}
 catch(secondaryError){document.getElementById('error').style.display='block';document.getElementById('error').innerHTML='Unable to load the 3D engine. Please check your connection and refresh the page.<p><a href="./">Back to Mindora Games</a></p>';throw secondaryError}}
 const $=id=>document.getElementById(id),W=62,D=90,container=$('game');
-let ripple,effectMat,sparkPool=[],sparkCursor=0,swirlStars=[];
+let ripple,effectMat,sparkPool=[],sparkCursor=0,swirlStars=[],vortexRings=[];
 const solidPlacements=[];
 const cutUniforms={center:{value:null},radius:{value:1}};
 const MODES={easy:{goal:24,time:170,speed:12.3},medium:{goal:30,time:145,speed:13.1},hard:{goal:38,time:125,speed:14.1}};
 let difficulty="medium",points=0,combo=0,bestCombo=0,lastCollectTime=-100,roundFinished=false;
 let renderer,scene,camera,ground,portal,ring,shadow,steerTarget=null,items=[],decor=[],particles=[],playing=false,last=0,elapsed=0,score=0,level=1,goal=75,time=300,remaining=300,radius=1.15,dragging=false,prevPointer=null,activePointer=null,joystick={x:0,y:0},soundOn=true,audio=null,noticeTimer=null;
 const track=(name,extra={})=>{try{gtag('event',name,{game_name:'hole_world',...extra})}catch{}};
-const color=(hex)=>new THREE.MeshStandardMaterial({color:hex,roughness:.62,metalness:.02});
+const color=(hex)=>new THREE.MeshStandardMaterial({color:hex,roughness:.78,metalness:0});
+let terrainTexture;
+function makeTerrainMaterial(hex){
+ if(!terrainTexture){
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+  const c=canvas.getContext('2d');c.fillStyle='#f8faf4';c.fillRect(0,0,128,128);
+  let seed=34719;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+  for(let i=0;i<1350;i++){
+   const x=rnd()*128,y=rnd()*128,r=.2+rnd()*1.6;
+   c.fillStyle=i%3===0?'#dce6da':i%3===1?'#f1f3ee':'#ebf0e8';
+   c.beginPath();c.ellipse(x,y,r,r*.52,rnd()*6.283,0,Math.PI*2);c.fill()
+  }
+  terrainTexture=new THREE.CanvasTexture(canvas);
+  terrainTexture.colorSpace=THREE.SRGBColorSpace;
+  terrainTexture.wrapS=terrainTexture.wrapT=THREE.RepeatWrapping;
+  terrainTexture.repeat.set(18,26);
+  terrainTexture.anisotropy=2;
+ }
+ const material=color(hex);material.map=terrainTexture;return material
+}
 function cutSurface(base){
  const material=base.clone();
  material.onBeforeCompile=shader=>{
@@ -53,13 +72,26 @@ const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.SphereGeometry(1,1
 function mesh(geo,mat,parent=scene){const o=new THREE.Mesh(geo,mat);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o}
 function makeBox(x,y,z,sx,sy,sz,mat,parent=scene){const m=mesh(boxGeo,mat,parent);m.position.set(x,y,z);m.scale.set(sx,sy,sz);return m}
 function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.position.set(x,y,z);m.scale.setScalar(r);return m}
-function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b7e2e5');scene.fog=new THREE.Fog('#b7e2e5',50,100);camera=new THREE.OrthographicCamera(-12,12,12,-12,.1,120);camera.position.set(0,32,28);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.35));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;container.append(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xe5f7ff,0x8eab86,1.32));const sun=new THREE.DirectionalLight(0xffedcf,2.4);sun.position.set(-12,28,14);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
+function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b7e2e5');scene.fog=new THREE.Fog('#b7e2e5',50,100);camera=new THREE.OrthographicCamera(-12,12,12,-12,.1,120);camera.position.set(0,32,28);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});const isCoarse=matchMedia('(pointer:coarse)').matches||innerWidth<690;renderer.setPixelRatio(Math.min(devicePixelRatio,isCoarse?1.1:1.45));renderer.shadowMap.enabled=!isCoarse;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;container.append(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe5f7ff,0x8eab86,1.32));const sun=new THREE.DirectionalLight(0xffedcf,2.4);sun.position.set(-12,28,14);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 cutUniforms.center.value=new THREE.Vector2(0,11);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,cutSurface(color('#7bbabf')));ocean.receiveShadow=false;
-ground=makeBox(0,-.45,0,W,.8,D,cutSurface(color('#98bd87')));ground.receiveShadow=true;
+ground=makeBox(0,-.45,0,W,.8,D,cutSurface(makeTerrainMaterial('#98bd87')));ground.receiveShadow=true;
 makeBox(0,-.89,0,W+.3,.18,D+.3,cutSurface(mats.edge));
-const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-2.65;disk.renderOrder=0;disk.material.depthTest=true;disk.material.depthWrite=true;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.09;ring.renderOrder=2;ring.material.depthTest=true;ring.material.depthWrite=true;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.085;inner.renderOrder=2;inner.material.depthTest=true;inner.material.depthWrite=true;shadow=holeGroup;holeGroup.position.set(0,.04,11);
+const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-2.65;disk.renderOrder=0;disk.material.depthTest=true;disk.material.depthWrite=true;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.09;ring.renderOrder=2;ring.material.depthTest=true;ring.material.depthWrite=true;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.085;inner.renderOrder=2;inner.material.depthTest=true;inner.material.depthWrite=true;// A true visible well below the cut ground, with cylindrical interior and luminous depth rings.
+const shaftMat=new THREE.MeshStandardMaterial({color:0x132545,roughness:.39,metalness:.18,side:THREE.BackSide});
+const shaft=mesh(new THREE.CylinderGeometry(.91,.91,2.75,64,1,true),shaftMat,holeGroup);
+shaft.position.y=-1.3;shaft.castShadow=false;
+vortexRings=[];
+for(let k=0;k<5;k++){
+ const m=new THREE.MeshBasicMaterial({color:k%2?0x69c6ff:0xb596ff,transparent:true,opacity:.55-k*.07,depthWrite:false});
+ const band=mesh(new THREE.TorusGeometry(.81-k*.045,.022,6,56),m,holeGroup);
+ band.rotation.x=-Math.PI/2;band.position.y=-.27-k*.49;band.renderOrder=1;vortexRings.push(band)
+}
+const haloMat=new THREE.MeshBasicMaterial({color:0x59dbf4,transparent:true,opacity:.23,side:THREE.DoubleSide,depthWrite:false});
+const halo=mesh(new THREE.RingGeometry(1.05,1.34,64),haloMat,holeGroup);
+halo.rotation.x=-Math.PI/2;halo.position.y=.075;halo.renderOrder=1;
+shadow=holeGroup;holeGroup.position.set(0,.04,11);
 // Lightweight portal effects: pulsing energy rings and collectible sparkles.
 effectMat=new THREE.MeshBasicMaterial({color:0x73e5f3,transparent:true,opacity:.58,depthWrite:false});
 ripple=new THREE.Mesh(new THREE.TorusGeometry(1.19,.027,6,72),effectMat);
@@ -112,7 +144,7 @@ solidPlacements.length=0;
 if(landmark3d){scene.remove(landmark3d);landmark3d=null}tokyoMixer=null;landmarkRequest++;
 if(advance)nextWorld();actors=[];
 for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
-items=[];decor=[];particles=[];ground.material.dispose();ground.material=cutSurface(color(world[2]==='desert'?'#d8bf89':world[2]==='village'?'#99b58a':level%2?'#98bd87':'#93b8a4'));
+items=[];decor=[];particles=[];ground.material.dispose();ground.material=cutSurface(makeTerrainMaterial(world[2]==='desert'?'#d8bf89':world[2]==='village'?'#99b58a':level%2?'#98bd87':'#93b8a4'));
 const palette=['#d8a48d','#e8c9a7','#b5bdcc','#9ec4b5','#8bafc8','#d5a9ae'].map(color);
 const asphalt=color(world[2]==='village'?'#b8a68c':'#77838e'),pavement=color('#d9d6cb'),line=color('#f2ece1'),glass=color('#9bc9d3'),roof=color('#b86b71'),door=color('#47576a'),leaf=color('#6aa982'),darkRoof=color('#63758b');
 function B(parent,x,y,z,w,h,d,mat){const o=makeBox(x,y,z,w,h,d,mat,parent);o.castShadow=h>1.0&&w>.8;return o}
@@ -120,7 +152,12 @@ function C(parent,x,y,z,r,h,mat){const o=mesh(cylGeo,mat,parent);o.position.set(
 function S(parent,x,y,z,r,mat){const o=ball(x,y,z,r,mat,parent);o.castShadow=r>.26;return o}
 function group(x,z){const g=new THREE.Group();scene.add(g);g.position.set(x,.05,z);return g}
 function addDecor(g){decor.push(g);return g}
-function addSolid(g,r=2.4){solidPlacements.push({x:g.position.x,z:g.position.z,r});return addDecor(g)}
+function addSolid(g,r=2.4){
+ solidPlacements.push({x:g.position.x,z:g.position.z,r});
+ const contact=new THREE.Mesh(new THREE.CircleGeometry(r*.92,28),new THREE.MeshBasicMaterial({color:0x233440,transparent:true,opacity:.13,depthWrite:false}));
+ contact.rotation.x=-Math.PI/2;contact.position.y=.09;g.add(contact);
+ return addDecor(g)
+}
 function clearForItem(x,z,r=.7){return solidPlacements.every(p=>Math.hypot(x-p.x,z-p.z)>p.r+r)&&items.every(p=>Math.hypot(x-p.position.x,z-p.position.z)>1.15)}
 function addItem(g,size){g.userData={group:true,size,collected:false,fall:0};items.push(g);return g}
 function softBox(parent,x,y,z,w,h,d,mat,r=.08){
@@ -542,7 +579,7 @@ const speed=MODES[difficulty].speed;
 portal.position.x=THREE.MathUtils.clamp(portal.position.x+stickSmoothed.x*speed*dt,-W/2+radius,W/2-radius);
 portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*dt,-D/2+radius,D/2-radius)
 }remaining-=dt;elapsed+=dt;if(combo>0&&elapsed-lastCollectTime>4.2)combo=0;if(remaining<=0){remaining=0;playing=false;if(!roundFinished){roundFinished=true;showEnd(false,'TIME IS UP!','You earned '+points+' points and collected '+score+' / '+goal+'. Try again!')}}updateHud()}
-if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.z+=dt*.6;
+if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.y+=dt*.6;for(let i=0;i<vortexRings.length;i++)vortexRings[i].rotation.z+=dt*(i%2?-0.8:0.7);
 for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math.pow(1-t,.72);const a=star.angle+now*.0028+t*7.5;star.mesh.position.set(Math.cos(a)*r,.227+Math.sin(t*Math.PI)*.015,Math.sin(a)*r);const scale=Math.max(.12,(1-t)*1.5);star.mesh.scale.setScalar(scale);star.mesh.material.opacity=Math.min(1,(1-t)*1.5)}
 ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);cutUniforms.center.value.set(portal.position.x,portal.position.z);cutUniforms.radius.value=radius*.89;
 for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*6);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(32-camera.position.y)*follow;camera.position.z+=(portal.position.z+17-camera.position.z)*follow;camera.lookAt(portal.position.x,0,portal.position.z);
