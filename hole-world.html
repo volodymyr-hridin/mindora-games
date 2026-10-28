@@ -81,14 +81,13 @@ function cutSurface(base){
  return material;
 }
 
-const KENNEY_IDS=['house-a','house-c','house-e','shop-a','shop-c','car-sedan','car-taxi','car-van','tree-detailed','tree-oak'];
+const KENNEY_IDS=['house-a','house-c','house-e','shop-a','shop-c','car-sedan','car-taxi','car-van','tree-detailed','tree-oak','food-apple','food-donut','food-cupcake','food-burger'];
 async function loadPremiumModels(){
- const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
- const loader=new GLTFLoader();
+ let loader;try{const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');loader=new GLTFLoader()}catch(e){console.warn('3D asset loader unavailable; using built-in models',e);return 0}
  const loaded=await Promise.allSettled(KENNEY_IDS.map(async id=>{
   const response=await fetch('./assets/kenney/'+id+'.b64',{cache:'force-cache'});
   if(!response.ok)throw new Error(id+': HTTP '+response.status);
-  const text=(await response.text()).replace(/\\s+/g,'');
+  const text=(await response.text()).replace(/\s+/g,'');
   const binary=atob(text);
   const buffer=new Uint8Array(binary.length);
   for(let i=0;i<binary.length;i++)buffer[i]=binary.charCodeAt(i);
@@ -351,7 +350,14 @@ if(van){B(g,0,1.32,0,.75,.09,.73,chromeMat);B(g,-.4,.68,.48,.52,.045,.035,chrome
 g.rotation.y=i%2?Math.PI/2:0;
 return addItem(g,1.35)
 }
-function treasure(x,z,i){const g=group(x,z),type=i%6,c=palette[i%6];if(type===0){C(g,0,.32,0,.3,.64,c);S(g,0,.76,0,.28,mats.white);S(g,0,1.02,0,.15,mats.pink)}
+function treasure(x,z,i){
+ const asset=['food-apple','food-donut','food-cupcake','food-burger'][i%4];
+ if(assetLibrary.has(asset)){
+  const g=group(x,z);placePremiumModel(asset,g,.86);
+  g.rotation.y=i*.79;
+  return addItem(g,.5)
+ }
+ const g=group(x,z),type=i%6,c=palette[i%6];if(type===0){C(g,0,.32,0,.3,.64,c);S(g,0,.76,0,.28,mats.white);S(g,0,1.02,0,.15,mats.pink)}
 else if(type===1){B(g,0,.4,0,.65,.8,.65,c);B(g,0,.83,0,.74,.12,.74,mats.white);B(g,0,.43,.35,.2,.3,.08,mats.yellow)}
 else if(type===2){S(g,0,.4,0,.42,c);S(g,.16,.68,0,.15,mats.mint);C(g,0,.13,0,.18,.14,mats.wood)}
 else if(type===3){B(g,0,.19,0,.85,.25,.6,mats.wood);for(let k=0;k<3;k++)S(g,(k-1)*.25,.47,0,.19,palette[(i+k)%6])}
@@ -419,7 +425,12 @@ const key=word+bg;if(!tokyoSignCache.has(key))tokyoSignCache.set(key,makeSign(wo
 return tokyoSignCache.get(key)
 }
 function tokyoFacade(x,z,i){
-const g=group(x,z),height=4.2+(i%5)*.8,w=2.65+(i%3)*.32,depth=2.65;
+ const id=i%2?'shop-a':'shop-c';
+ if(assetLibrary.has(id)){
+  const g=group(x,z);placePremiumModel(id,g,4.3);
+  g.rotation.y=(i%4)*Math.PI/2;return addSolid(g,2.9)
+ }
+ const g=group(x,z),height=4.2+(i%5)*.8,w=2.65+(i%3)*.32,depth=2.65;
 const wall=facadeTexture(i),roof=tokyoMat.roof,frame=tokyoMat.frame;
 B(g,0,height/2,0,w,height,depth,wall);
 B(g,0,.19,depth/2+.2,w+.3,.38,.7,tokyoMat.cream);
