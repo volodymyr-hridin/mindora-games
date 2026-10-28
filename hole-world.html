@@ -29,6 +29,7 @@ catch(secondaryError){document.getElementById('error').style.display='block';doc
 const $=id=>document.getElementById(id),W=62,D=90,container=$('game');
 let ripple,effectMat,sparkPool=[],sparkCursor=0,swirlStars=[],vortexRings=[];
 const solidPlacements=[];
+const contactGeometry=new THREE.CircleGeometry(1,28),contactMaterial=new THREE.MeshBasicMaterial({color:0x233440,transparent:true,opacity:.13,depthWrite:false});
 const cutUniforms={center:{value:null},radius:{value:1}};
 const MODES={easy:{goal:24,time:170,speed:12.3},medium:{goal:30,time:145,speed:13.1},hard:{goal:38,time:125,speed:14.1}};
 let difficulty="medium",points=0,combo=0,bestCombo=0,lastCollectTime=-100,roundFinished=false;
@@ -154,8 +155,8 @@ function group(x,z){const g=new THREE.Group();scene.add(g);g.position.set(x,.05,
 function addDecor(g){decor.push(g);return g}
 function addSolid(g,r=2.4){
  solidPlacements.push({x:g.position.x,z:g.position.z,r});
- const contact=new THREE.Mesh(new THREE.CircleGeometry(r*.92,28),new THREE.MeshBasicMaterial({color:0x233440,transparent:true,opacity:.13,depthWrite:false}));
- contact.rotation.x=-Math.PI/2;contact.position.y=.09;g.add(contact);
+ const contact=new THREE.Mesh(contactGeometry,contactMaterial);
+ contact.rotation.x=-Math.PI/2;contact.position.y=.09;contact.scale.setScalar(r*.92);g.add(contact);
  return addDecor(g)
 }
 function clearForItem(x,z,r=.7){return solidPlacements.every(p=>Math.hypot(x-p.x,z-p.z)>p.r+r)&&items.every(p=>Math.hypot(x-p.position.x,z-p.position.z)>1.15)}
@@ -582,7 +583,7 @@ portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*
 if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.y+=dt*.6;for(let i=0;i<vortexRings.length;i++)vortexRings[i].rotation.z+=dt*(i%2?-0.8:0.7);
 for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math.pow(1-t,.72);const a=star.angle+now*.0028+t*7.5;star.mesh.position.set(Math.cos(a)*r,.227+Math.sin(t*Math.PI)*.015,Math.sin(a)*r);const scale=Math.max(.12,(1-t)*1.5);star.mesh.scale.setScalar(scale);star.mesh.material.opacity=Math.min(1,(1-t)*1.5)}
 ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);cutUniforms.center.value.set(portal.position.x,portal.position.z);cutUniforms.radius.value=radius*.89;
-for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*6);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(32-camera.position.y)*follow;camera.position.z+=(portal.position.z+17-camera.position.z)*follow;camera.lookAt(portal.position.x,0,portal.position.z);
+for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*6);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(32-camera.position.y)*follow;camera.position.z+=(portal.position.z+17-camera.position.z)*follow;camera.lookAt(camera.position.x,0,camera.position.z-17);
 // The entire world remains present. Three.js handles normal frustum culling automatically.
 // Never toggle district visibility in relation to the moving player: it causes visible popping.
 for(const o of items){if(o.userData.collected){
