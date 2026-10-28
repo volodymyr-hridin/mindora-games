@@ -123,8 +123,8 @@ function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b7e2e
 scene.add(new THREE.HemisphereLight(0xe5f7ff,0x8eab86,1.32));const sun=new THREE.DirectionalLight(0xffedcf,2.4);sun.position.set(-12,28,14);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 cutUniforms.center.value=new THREE.Vector2(0,11);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,cutSurface(color('#7bbabf')));ocean.receiveShadow=false;
-ground=makeBox(0,-.45,0,W,.8,D,cutSurface(makeTerrainMaterial('#98bd87')));ground.receiveShadow=true;
-makeBox(0,-.89,0,W+.3,.18,D+.3,cutSurface(mats.edge));
+ground=makeBox(0,-.45,0,W+65,.8,D+65,cutSurface(makeTerrainMaterial('#98bd87')));ground.receiveShadow=true;
+makeBox(0,-.89,0,W+65.3,.18,D+65.3,cutSurface(mats.edge));
 const holeGroup=new THREE.Group();scene.add(holeGroup);portal=holeGroup;const disk=mesh(new THREE.CircleGeometry(1,64),mats.black,holeGroup);disk.rotation.x=-Math.PI/2;disk.position.y=-2.65;disk.renderOrder=0;disk.material.depthTest=true;disk.material.depthWrite=true;ring=mesh(new THREE.TorusGeometry(1,.12,12,64),mats.rim,holeGroup);ring.rotation.x=-Math.PI/2;ring.position.y=.09;ring.renderOrder=2;ring.material.depthTest=true;ring.material.depthWrite=true;const inner=mesh(new THREE.TorusGeometry(.84,.13,10,48),mats.ring,holeGroup);inner.rotation.x=-Math.PI/2;inner.position.y=.085;inner.renderOrder=2;inner.material.depthTest=true;inner.material.depthWrite=true;// A true visible well below the cut ground, with cylindrical interior and luminous depth rings.
 const shaftMat=new THREE.MeshStandardMaterial({color:0x132545,roughness:.39,metalness:.18,side:THREE.BackSide});
 const shaft=mesh(new THREE.CylinderGeometry(.91,.91,2.75,64,1,true),shaftMat,holeGroup);
@@ -597,6 +597,22 @@ for(let i=0;i<11;i++){
  const patch=mesh(new THREE.CircleGeometry(2.2+i%3*.45,24),grassIsland,g);
  patch.rotation.x=-Math.PI/2;patch.scale.y=.65;patch.position.y=.095;
  for(let j=0;j<3;j++)S(g,Math.cos(j*2.09)*.8,.26,Math.sin(j*2.09)*.7,.25,leaf);
+ addDecor(g)
+}
+// Background vegetation and rolling landforms hide the playable boundary without affecting movement.
+const borderLeaf=color(world[2]==='desert'?'#b3a781':'#669878');
+const borderTrunk=color('#8d7961');
+for(let k=0;k<34;k++){
+ const edge=k%4,progress=((k*0.61803398875)%1);
+ let x,z;
+ if(edge===0){x=-W/2-5-Math.random()*13;z=(progress-.5)*(D+45)}
+ else if(edge===1){x=W/2+5+Math.random()*13;z=(progress-.5)*(D+45)}
+ else if(edge===2){z=-D/2-5-Math.random()*13;x=(progress-.5)*(W+45)}
+ else{z=D/2+5+Math.random()*13;x=(progress-.5)*(W+45)}
+ const g=group(x,z);
+ const stump=mesh(cylGeo,borderTrunk,g);stump.position.y=.65;stump.scale.set(.22,1.35,.22);
+ const crown=mesh(new THREE.IcosahedronGeometry(1.05+(k%4)*.17,1),borderLeaf,g);
+ crown.position.y=1.9+(k%3)*.15;crown.scale.y=.8;
  addDecor(g)
 }
 if(world[0]==='Tokyo'){for(let j=0;j<18;j++){const x=(Math.random()-.5)*(W-7),z=(Math.random()-.5)*(D-7);if(Math.hypot(x,z-11)>7)sakura(x,z,j)}for(let x=-25;x<=25;x+=10)for(let z=-36;z<=36;z+=12)crossing(x,z);for(let j=0;j<25;j++){const x=-21+(j%5)*10,z=-29+Math.floor(j/5)*12;if(Math.hypot(x,z-11)<8)continue;if(j%5===0)toriiGate(x,z);else if(j%3===0)vendingMachine(x,z,j);else lanternStreet(x,z)}}
