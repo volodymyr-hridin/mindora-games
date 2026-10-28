@@ -27,7 +27,7 @@ b.textContent='RELOAD GAME ↻';
 b.onclick=null;
 b.addEventListener('click',()=>location.reload(),{once:true});
 },{once:true});
-window.setTimeout(function(){if(!window.__holeReady){b.textContent='RELOAD GAME ↻';desc.textContent='The 3D engine did not load. Tap to reload, or open this game in Safari or Chrome.'}},12000);
+window.setTimeout(function(){if(!window.__holeReady){b.textContent='RELOAD GAME ↻';desc.textContent='The 3D engine did not load. Tap to reload, or open this game in Safari or Chrome.'}},22000);
 window.addEventListener('error',function(e){if(!window.__holeReady){desc.textContent='Game startup error: '+(e.message||'3D engine failed to load');b.textContent='RELOAD GAME ↻'}});
 window.addEventListener('unhandledrejection',function(e){if(!window.__holeReady){desc.textContent='3D engine load failed. Please try reloading or using another browser.';b.textContent='RELOAD GAME ↻'}});
 })();
@@ -41,6 +41,7 @@ catch(primaryError){try{THREE=await import('https://unpkg.com/three@0.170.0/buil
 catch(secondaryError){document.getElementById('error').style.display='block';document.getElementById('error').innerHTML='Unable to load the 3D engine. Please check your connection and refresh the page.<p><a href="./">Back to Mindora Games</a></p>';throw secondaryError}}
 const $=id=>document.getElementById(id),W=62,D=90,container=$('game');
 let ripple,effectMat,sparkPool=[],sparkCursor=0,swirlStars=[],vortexRings=[];
+const assetLibrary=new Map();
 const solidPlacements=[];
 const contactGeometry=new THREE.CircleGeometry(1,28),contactMaterial=new THREE.MeshBasicMaterial({color:0x233440,transparent:true,opacity:.13,depthWrite:false});
 const cutUniforms={center:{value:null},radius:{value:1}};
@@ -79,6 +80,38 @@ function cutSurface(base){
  material.customProgramCacheKey=()=> 'mindora-moving-ground-hole-v2';
  return material;
 }
+
+const KENNEY_IDS=['house-a','house-c','house-e','shop-a','shop-c','car-sedan','car-taxi','car-van','tree-detailed','tree-oak','food-apple','food-donut','food-cupcake','food-burger'];
+async function loadPremiumModels(){
+ let loader;try{const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');loader=new GLTFLoader()}catch(e){console.warn('3D asset loader unavailable; using built-in models',e);return 0}
+ const loaded=await Promise.allSettled(KENNEY_IDS.map(async id=>{
+  const response=await fetch('./assets/kenney/'+id+'.b64',{cache:'force-cache'});
+  if(!response.ok)throw new Error(id+': HTTP '+response.status);
+  const text=(await response.text()).replace(/\s+/g,'');
+  const binary=atob(text);
+  const buffer=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)buffer[i]=binary.charCodeAt(i);
+  const gltf=await new Promise((resolve,reject)=>loader.parse(buffer.buffer,'',resolve,reject));
+  const box=new THREE.Box3().setFromObject(gltf.scene);
+  if(box.isEmpty())throw new Error('Empty GLB: '+id);
+  assetLibrary.set(id,{scene:gltf.scene,size:box.getSize(new THREE.Vector3()),center:box.getCenter(new THREE.Vector3()),minY:box.min.y});
+  return id
+ }));
+ const failed=loaded.map((v,i)=>v.status==='rejected'?KENNEY_IDS[i]:null).filter(Boolean);
+ if(failed.length)console.warn('Kenney models unavailable; using built-in fallback for:',failed.join(', '));
+ return assetLibrary.size
+}
+function placePremiumModel(id,parent,sizeXZ=3){
+ const entry=assetLibrary.get(id);
+ if(!entry)return false;
+ const copy=entry.scene.clone(true);
+ const scale=sizeXZ/Math.max(entry.size.x,entry.size.z,.01);
+ copy.scale.setScalar(scale);
+ copy.position.set(-entry.center.x*scale,.035-entry.minY*scale,-entry.center.z*scale);
+ copy.traverse(obj=>{if(obj.isMesh){obj.userData.sharedKenney=true;obj.castShadow=Boolean(renderer.shadowMap.enabled);obj.receiveShadow=true}});
+ parent.add(copy);
+ return true
+}
 function configureRound(){const rule=MODES[difficulty];goal=rule.goal+Math.min(12,(level-1)*3);time=rule.time+Math.min(30,(level-1)*5)}
 function showBest(){try{const v=JSON.parse(localStorage.getItem('mindora-hole-world-v1')||'{}');$('best').textContent='🏆 Best: '+(v.bestPoints||0)+' points · '+(v.wins||0)+' wins'}catch{$('best').textContent='🏆 Beat your high score!'}}
 const mats={grass:color('#87c952'),grass2:color('#78b845'),edge:color('#6eaa42'),water:color('#54c9e6'),pink:color('#ff71ae'),orange:color('#ffad4c'),yellow:color('#ffe17b'),purple:color('#8e79fa'),blue:color('#5fa8fa'),mint:color('#66e5bd'),white:color('#fff2dc'),wood:color('#bd8557'),dark:color('#0b1736'),black:new THREE.MeshBasicMaterial({color:0x030611,side:THREE.DoubleSide}),ring:new THREE.MeshStandardMaterial({color:0x2b56b5,metalness:.25,roughness:.26}),rim:new THREE.MeshStandardMaterial({color:0x6ef7ff,emissive:0x147aab,emissiveIntensity:.5,metalness:.35,roughness:.18})};
@@ -86,7 +119,7 @@ const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.SphereGeometry(1,1
 function mesh(geo,mat,parent=scene){const o=new THREE.Mesh(geo,mat);o.castShadow=false;o.receiveShadow=true;parent.add(o);return o}
 function makeBox(x,y,z,sx,sy,sz,mat,parent=scene){const m=mesh(boxGeo,mat,parent);m.position.set(x,y,z);m.scale.set(sx,sy,sz);return m}
 function ball(x,y,z,r,mat,parent=scene){const m=mesh(sphereGeo,mat,parent);m.position.set(x,y,z);m.scale.setScalar(r);return m}
-function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b7e2e5');scene.fog=new THREE.Fog('#b7e2e5',50,100);camera=new THREE.OrthographicCamera(-12,12,12,-12,.1,120);camera.position.set(0,32,28);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});const isCoarse=matchMedia('(pointer:coarse)').matches||innerWidth<690;renderer.setPixelRatio(Math.min(devicePixelRatio,isCoarse?1.1:1.45));renderer.shadowMap.enabled=!isCoarse;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;container.append(renderer.domElement);
+function init(){scene=new THREE.Scene();scene.background=new THREE.Color('#b7e2e5');scene.fog=new THREE.Fog('#b7e2e5',50,100);camera=new THREE.OrthographicCamera(-12,12,12,-12,.1,120);camera.position.set(0,25,38);camera.lookAt(0,0,11);renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',alpha:false});const isCoarse=matchMedia('(pointer:coarse)').matches||innerWidth<690;renderer.setPixelRatio(Math.min(devicePixelRatio,isCoarse?1.1:1.45));renderer.shadowMap.enabled=!isCoarse;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;container.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xe5f7ff,0x8eab86,1.32));const sun=new THREE.DirectionalLight(0xffedcf,2.4);sun.position.set(-12,28,14);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.bias=-.0005;scene.add(sun);
 cutUniforms.center.value=new THREE.Vector2(0,11);
 const ocean=makeBox(0,-1.25,0,W+18,1.2,D+18,cutSurface(color('#7bbabf')));ocean.receiveShadow=false;
@@ -157,7 +190,7 @@ function buildWorld(advance=true){
 solidPlacements.length=0;
 if(landmark3d){scene.remove(landmark3d);landmark3d=null}tokyoMixer=null;landmarkRequest++;
 if(advance)nextWorld();actors=[];
-for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
+for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!o.userData.sharedKenney&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
 items=[];decor=[];particles=[];ground.material.dispose();ground.material=cutSurface(makeTerrainMaterial(world[2]==='desert'?'#d8bf89':world[2]==='village'?'#99b58a':level%2?'#98bd87':'#93b8a4'));
 const palette=['#d8a48d','#e8c9a7','#b5bdcc','#9ec4b5','#8bafc8','#d5a9ae'].map(color);
 const asphalt=color(world[2]==='village'?'#b8a68c':'#77838e'),pavement=color('#d9d6cb'),line=color('#f2ece1'),glass=color('#9bc9d3'),roof=color('#b86b71'),door=color('#47576a'),leaf=color('#6aa982'),darkRoof=color('#63758b');
@@ -205,6 +238,12 @@ function windowSet(parent,x,y,z,frameMat,glassMat){
 }
 
 function building(x,z,idx){
+ if(assetLibrary.size&&assetLibrary.has(idx%2?'shop-a':'shop-c')){
+  const g=group(x,z);
+  placePremiumModel(idx%2?'shop-a':'shop-c',g,3.75);
+  g.rotation.y=(idx%4)*Math.PI/2;
+  return addSolid(g,2.5)
+ }
  const g=group(x,z),w=2.15+(idx%3)*.17,h=2.8+(idx%4)*.63,d=2.25;
  const wall=palette[idx%palette.length],frame=color('#e8e4d8'),roofPaint=idx%2?roof:darkRoof;
  softBox(g,0,h/2,0,w,h,d,wall,.1);
@@ -232,6 +271,12 @@ function building(x,z,idx){
  return addSolid(g,2.5)
 }
 function house(x,z,i){
+ const asset=['house-a','house-c','house-e'][i%3];
+ if(assetLibrary.has(asset)){
+  const g=group(x,z);placePremiumModel(asset,g,3.7);
+  g.rotation.y=(i%4)*Math.PI/2;
+  return addSolid(g,2.55)
+ }
  const g=group(x,z),wall=palette[i%palette.length],trim=color('#f2e8d9'),roofPaint=i%2?roof:darkRoof;
  B(g,0,.14,0,2.9,.23,2.7,pavement);
  softBox(g,0,1.04,0,2.4,1.87,2.2,wall,.13);
@@ -252,6 +297,11 @@ function house(x,z,i){
  return addSolid(g,2.55)
 }
 function tree(x,z,i){
+ const id=i%3===0?'tree-oak':'tree-detailed';
+ if(assetLibrary.has(id)){
+  const g=group(x,z);placePremiumModel(id,g,2.25);
+  g.rotation.y=i*1.27;return addDecor(g)
+ }
  const g=group(x,z),trunk=color('#8e6d58'),foliage=[color('#5b9976'),color('#7fb38d'),color('#aacb91')],blossoms=color('#dda2bb');
  C(g,0,.77,0,.17,1.55,trunk);
  const crownGeo=new THREE.IcosahedronGeometry(1,1);
@@ -269,7 +319,13 @@ function tree(x,z,i){
 const carPaint=['#e6e4d9','#bb5050','#4c7e91','#d4b46a','#748a77','#696d7b'].map(h=>color(h));
 const tyreMat=color('#24272c'),chromeMat=color('#c4ccd0'),windowMat=color('#526e7c'),lampMat=color('#f7dfb0'),rearMat=color('#b74a46');
 function car(x,z,i){
-const g=group(x,z),paint=carPaint[i%carPaint.length],van=i%4===0;
+ const asset=i%5===0?'car-van':i%3===0?'car-taxi':'car-sedan';
+ if(assetLibrary.has(asset)){
+  const g=group(x,z);placePremiumModel(asset,g,2.25);
+  g.rotation.y=i%2?Math.PI/2:0;
+  return addItem(g,1.35)
+ }
+ const g=group(x,z),paint=carPaint[i%carPaint.length],van=i%4===0;
 const length=van?1.85:1.5,bodyH=van?.65:.48;
 B(g,0,.39,0,length,bodyH,.92,paint);
 B(g,van?-.06:-.12,van?.91:.78,0,van?1.22:.84,van?.76:.45,.85,paint);
@@ -294,7 +350,14 @@ if(van){B(g,0,1.32,0,.75,.09,.73,chromeMat);B(g,-.4,.68,.48,.52,.045,.035,chrome
 g.rotation.y=i%2?Math.PI/2:0;
 return addItem(g,1.35)
 }
-function treasure(x,z,i){const g=group(x,z),type=i%6,c=palette[i%6];if(type===0){C(g,0,.32,0,.3,.64,c);S(g,0,.76,0,.28,mats.white);S(g,0,1.02,0,.15,mats.pink)}
+function treasure(x,z,i){
+ const asset=['food-apple','food-donut','food-cupcake','food-burger'][i%4];
+ if(assetLibrary.has(asset)){
+  const g=group(x,z);placePremiumModel(asset,g,.86);
+  g.rotation.y=i*.79;
+  return addItem(g,.5)
+ }
+ const g=group(x,z),type=i%6,c=palette[i%6];if(type===0){C(g,0,.32,0,.3,.64,c);S(g,0,.76,0,.28,mats.white);S(g,0,1.02,0,.15,mats.pink)}
 else if(type===1){B(g,0,.4,0,.65,.8,.65,c);B(g,0,.83,0,.74,.12,.74,mats.white);B(g,0,.43,.35,.2,.3,.08,mats.yellow)}
 else if(type===2){S(g,0,.4,0,.42,c);S(g,.16,.68,0,.15,mats.mint);C(g,0,.13,0,.18,.14,mats.wood)}
 else if(type===3){B(g,0,.19,0,.85,.25,.6,mats.wood);for(let k=0;k<3;k++)S(g,(k-1)*.25,.47,0,.19,palette[(i+k)%6])}
@@ -362,7 +425,12 @@ const key=word+bg;if(!tokyoSignCache.has(key))tokyoSignCache.set(key,makeSign(wo
 return tokyoSignCache.get(key)
 }
 function tokyoFacade(x,z,i){
-const g=group(x,z),height=4.2+(i%5)*.8,w=2.65+(i%3)*.32,depth=2.65;
+ const id=i%2?'shop-a':'shop-c';
+ if(assetLibrary.has(id)){
+  const g=group(x,z);placePremiumModel(id,g,4.3);
+  g.rotation.y=(i%4)*Math.PI/2;return addSolid(g,2.9)
+ }
+ const g=group(x,z),height=4.2+(i%5)*.8,w=2.65+(i%3)*.32,depth=2.65;
 const wall=facadeTexture(i),roof=tokyoMat.roof,frame=tokyoMat.frame;
 B(g,0,height/2,0,w,height,depth,wall);
 B(g,0,.19,depth/2+.2,w+.3,.38,.7,tokyoMat.cream);
@@ -596,7 +664,7 @@ portal.position.z=THREE.MathUtils.clamp(portal.position.z+stickSmoothed.y*speed*
 if(tokyoMixer)tokyoMixer.update(dt);for(const a of actors){a.rotation.y+=dt*.14;a.position.y=.05+Math.sin(now*.0015+a.position.x)*.035}ring.rotation.y+=dt*.6;for(let i=0;i<vortexRings.length;i++)vortexRings[i].rotation.z+=dt*(i%2?-0.8:0.7);
 for(const star of swirlStars){const t=(star.phase+now*.00036)%1;const r=.91*Math.pow(1-t,.72);const a=star.angle+now*.0028+t*7.5;star.mesh.position.set(Math.cos(a)*r,.227+Math.sin(t*Math.PI)*.015,Math.sin(a)*r);const scale=Math.max(.12,(1-t)*1.5);star.mesh.scale.setScalar(scale);star.mesh.material.opacity=Math.min(1,(1-t)*1.5)}
 ripple.scale.setScalar(1+.055*Math.sin(now*.006));effectMat.opacity=.38+.17*Math.sin(now*.005);portal.scale.setScalar(radius);cutUniforms.center.value.set(portal.position.x,portal.position.z);cutUniforms.radius.value=radius*.89;
-for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*6);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(32-camera.position.y)*follow;camera.position.z+=(portal.position.z+17-camera.position.z)*follow;camera.lookAt(camera.position.x,0,camera.position.z-17);
+for(const p of sparkPool){if(p.life<=0)continue;p.life-=dt;p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;p.vy-=dt*6;p.mesh.scale.multiplyScalar(Math.max(.7,1-dt*2));if(p.life<=0)p.mesh.visible=false}const follow=1-Math.exp(-dt*6);camera.position.x+=(portal.position.x-camera.position.x)*follow;camera.position.y+=(25-camera.position.y)*follow;camera.position.z+=(portal.position.z+27-camera.position.z)*follow;camera.lookAt(camera.position.x,0,camera.position.z-27);
 // The entire world remains present. Three.js handles normal frustum culling automatically.
 // Never toggle district visibility in relation to the moving player: it causes visible popping.
 for(const o of items){if(!playing||o.userData.scored)continue;if(o.userData.collected){
@@ -656,5 +724,5 @@ try{const v=JSON.parse(localStorage.getItem('mindora-hole-world-v1')||'{}');if(N
 try{const savedMode=localStorage.getItem('mindora-hole-world-mode');if(MODES[savedMode])difficulty=savedMode}catch{}
 document.querySelectorAll('#difficulty button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===difficulty)));
 configureRound();showBest();
-try{init();buildWorld();window.__holeReady=true;launchButton.disabled=false;launchButton.textContent='LET\'S PLAY ▶'}catch(e){console.error('Hole World init failed',e);$('error').style.display='block';$('error').innerHTML='The 3D game could not start on this browser. Try refreshing or using Safari / Chrome.<p><a href="./">Back to Mindora Games</a></p>'}
+try{init();const premiumCount=await loadPremiumModels();buildWorld();window.__holeReady=true;launchButton.disabled=false;launchButton.textContent="LET'S PLAY ▶";console.info('Mindora Kenney models ready:',premiumCount)}catch(e){console.error('Hole World init failed',e);$('error').style.display='block';$('error').innerHTML='The 3D game could not start on this browser. Try refreshing or using Safari / Chrome.<p><a href="./">Back to Mindora Games</a></p>'}
 </script><script src="./questbook.js"></script><script src="./player-profile.js"></script></body></html>
