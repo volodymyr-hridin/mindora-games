@@ -187,7 +187,7 @@ $('notice').textContent='🏙️ TOKYO 3D LANDMARK LOADED';$('notice').classList
 }catch(e){console.warn('Optional Tokyo 3D model unavailable, keeping playable city',e)}
 }
 
-function nextWorld(){let n=0;try{n=Number(localStorage.getItem('mindora-hole-world-rotation')||'0')||0;localStorage.setItem('mindora-hole-world-rotation',String(n+1))}catch{n=Math.floor(Math.random()*WORLDS.length)}worldIndex=n%WORLDS.length;world=WORLDS[worldIndex];if(new URLSearchParams(location.search).get('showcase')==='tokyo'){worldIndex=0;world=WORLDS[0]}}
+function nextWorld(){worldIndex=(Math.max(1,level)-1)%WORLDS.length;world=WORLDS[worldIndex];if(new URLSearchParams(location.search).get('showcase')==='tokyo'){worldIndex=0;world=WORLDS[0]}}
 function buildWorld(advance=true){
 solidPlacements.length=0;
 if(landmark3d){scene.remove(landmark3d);landmark3d=null}tokyoMixer=null;landmarkRequest++;
@@ -590,6 +590,55 @@ for(let row=0;row<7;row++)for(let col=0;col<4;col++){
  else if(idx%3===0)tree(px,pz,idx);
  else house(px,pz,idx)
 }
+// City-specific silhouettes: low-cost geometry, no extra network assets.
+function cityLandmark(x,z){
+ const g=group(x,z),style=world[2],name=world[0];
+ const stone=color(style==='desert'?'#e4c59b':style==='market'?'#e6b783':style==='neon'?'#d7c6d8':'#b5cbd4');
+ const accent=color(style==='neon'?'#ed638f':style==='market'?'#dc7d4d':style==='desert'?'#c99a5a':'#54a7c1');
+ const dark=color(style==='neon'?'#4e4d82':'#668393');
+ if(style==='market'||style==='desert'){
+  // Ornate gateway with a vaulted entrance, towers and contrasting roof caps.
+  for(const side of [-1,1]){
+   B(g,side*1.85,1.55,0,.88,3.1,1.1,stone);
+   C(g,side*1.85,3.25,0,.64,.4,accent);
+   const dome=mesh(new THREE.SphereGeometry(.58,12,8,0,Math.PI*2,0,Math.PI/2),accent,g);
+   dome.position.set(side*1.85,3.48,0);
+  }
+  B(g,0,2.95,0,3.5,.65,1.12,stone);
+  B(g,0,3.48,0,3.85,.28,1.32,accent);
+  for(const side of [-1,1])B(g,side*1.15,2.1,.61,.15,1.25,.12,dark);
+ }else if(style==='neon'||name==='Tokyo'||name==='Osaka'){
+  // Layered pagoda with broad overhanging eaves and illuminated accents.
+  for(let floor=0;floor<3;floor++){
+   const w=3.5-floor*.65,y=.65+floor*1.18;
+   B(g,0,y,0,w,.98,w*.8,stone);
+   B(g,0,y+.54,0,w+.65,.16,w*.8+.55,dark);
+   B(g,0,y+.67,0,w+.3,.12,w*.8+.25,accent);
+   for(const side of [-1,1])B(g,side*w*.33,y, w*.4+.06,.16,.67,.12,accent);
+  }
+  C(g,0,4.3,0,.13,1.05,accent);
+ }else if(style==='skyline'){
+  for(let i=0;i<4;i++){
+   const h=3.5+(i%3)*1.75,w=1.15+i%2*.45,xx=(i-1.5)*1.3;
+   B(g,xx,h/2,0,w,h,1.5,i%2?dark:stone);
+   for(let j=1;j<Math.floor(h);j++)B(g,xx,j,.78,w*.7,.12,.06,accent);
+  }
+ }else if(style==='village'||style==='europe'){
+  B(g,0,1.55,0,3.3,3.1,2.4,stone);
+  pitchedRoof(g,3.8,2.7,2.4,1.1,accent);
+  C(g,0,3.75,0,.38,1.2,dark);
+  S(g,0,4.45,0,.42,accent);
+ }else{
+  // Tropical and coastal worlds get an open pavilion instead of urban towers.
+  for(const side of [-1,1])for(const depth of [-1,1])C(g,side*1.45,1.25,depth*1.05,.17,2.5,stone);
+  B(g,0,2.65,0,3.8,.3,3.1,accent);
+  pitchedRoof(g,4.25,3.2,3.5,1.2,dark);
+ }
+ addSolid(g,3.4);
+}
+const landmarkSpots=[[-27,-17],[28,-17],[-27,30],[28,30]];
+const landmarkSpot=landmarkSpots[(level-1)%landmarkSpots.length];
+cityLandmark(landmarkSpot[0],landmarkSpot[1]);
 // Garden islands follow the curved roads and remain visible as part of the level.
 const grassIsland=cutSurface(color(world[2]==='desert'?'#c4ad75':world[2]==='neon'?'#6e9e91':world[2]==='market'?'#a4ad72':'#85b693'));
 for(let i=0;i<11;i++){
