@@ -586,6 +586,25 @@ for(let row=0;row<7;row++)for(let col=0;col<4;col++){
   if(idx%5===0)sakura(px,pz,idx);
   else if(idx%3===0)tokyoFacade(px,pz,idx);
   else house(px,pz,idx)
+ }else if(world[2]==='skyline'){
+  // Dense modern high-rises, with occasional street trees.
+  if(idx%6===0)tree(px,pz,idx);
+  else if(idx%3===0)tokyoFacade(px,pz,idx);
+  else building(px,pz,idx)
+ }else if(world[2]==='market'){
+  // Low-rise market streets, varied shopfronts and open courtyards.
+  if(idx%5===0)tree(px,pz,idx);
+  else if(idx%2===0)tokyoFacade(px,pz,idx);
+  else house(px,pz,idx)
+ }else if(world[2]==='desert'){
+  // Airy desert settlements, with more breathing room between structures.
+  if(idx%4===0)tree(px,pz,idx);
+  else if(idx%3===0)building(px,pz,idx);
+  else house(px,pz,idx)
+ }else if(world[2]==='tropical'||world[2]==='harbor'){
+  if(idx%3===0)tree(px,pz,idx);
+  else if(idx%4===0)building(px,pz,idx);
+  else house(px,pz,idx)
  }else if(idx%4===0)building(px,pz,idx);
  else if(idx%3===0)tree(px,pz,idx);
  else house(px,pz,idx)
@@ -750,7 +769,7 @@ const dx=e.clientX-stickOrigin.x,dy=e.clientY-stickOrigin.y;
 const length=Math.hypot(dx,dy),deadzone=2;
 const reach=matchMedia('(pointer:fine)').matches?72:38;
 const normalized=Math.min(1,Math.max(0,(length-deadzone)/(reach-deadzone)));
-const strength=Math.pow(normalized,.72);
+const strength=Math.pow(normalized,.86);
 if(length>0){stickDirection.set(dx/length*strength,dy/length*strength)}
 else stickDirection.set(0,0);
 if(e.cancelable)e.preventDefault()
