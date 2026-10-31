@@ -195,7 +195,7 @@ if(advance)nextWorld();actors=[];
 for(const m of [...items,...decor,...particles]){scene.remove(m);m.traverse?.(o=>{if(o.geometry&&!o.userData.sharedKenney&&!([boxGeo,sphereGeo,cylGeo].includes(o.geometry)))o.geometry.dispose()})}
 items=[];decor=[];particles=[];ground.material.dispose();ground.material=cutSurface(makeTerrainMaterial(world[2]==='desert'?'#d8bf89':world[2]==='village'?'#99b58a':level%2?'#98bd87':'#93b8a4'));
 const palette=['#d8a48d','#e8c9a7','#b5bdcc','#9ec4b5','#8bafc8','#d5a9ae'].map(color);
-const asphalt=color(world[2]==='village'?'#b8a68c':'#77838e'),pavement=color('#d9d6cb'),line=color('#f2ece1'),glass=color('#9bc9d3'),roof=color('#b86b71'),door=color('#47576a'),leaf=color('#6aa982'),darkRoof=color('#63758b');
+const asphalt=cutSurface(color(world[2]==='village'?'#b8a68c':world[2]==='desert'?'#b69b78':world[2]==='neon'?'#4e6078':world[2]==='market'?'#85766a':world[2]==='skyline'?'#687986':'#77838e')),pavement=color('#d9d6cb'),line=cutSurface(color('#f2ece1')),glass=color('#9bc9d3'),roof=color('#b86b71'),door=color('#47576a'),leaf=color('#6aa982'),darkRoof=color('#63758b');
 function B(parent,x,y,z,w,h,d,mat){const o=makeBox(x,y,z,w,h,d,mat,parent);o.castShadow=h>1.0&&w>.8;return o}
 function C(parent,x,y,z,r,h,mat){const o=mesh(cylGeo,mat,parent);o.position.set(x,y,z);o.scale.set(r,h,r);return o}
 function S(parent,x,y,z,r,mat){const o=ball(x,y,z,r,mat,parent);o.castShadow=r>.26;return o}
@@ -591,7 +591,7 @@ for(let row=0;row<7;row++)for(let col=0;col<4;col++){
  else house(px,pz,idx)
 }
 // Garden islands follow the curved roads and remain visible as part of the level.
-const grassIsland=color(world[2]==='desert'?'#c4ad75':'#85b693');
+const grassIsland=cutSurface(color(world[2]==='desert'?'#c4ad75':world[2]==='neon'?'#6e9e91':world[2]==='market'?'#a4ad72':'#85b693'));
 for(let i=0;i<11;i++){
  const x=-25+(i%4)*16.5,z=-35+Math.floor(i/4)*28;
  if(Math.hypot(x,z-11)<7||solidPlacements.some(p=>Math.hypot(p.x-x,p.z-z)<4))continue;
@@ -698,9 +698,10 @@ if(e.cancelable)e.preventDefault()
 function move(e){
 if(!playing||!dragging||e.pointerId!==activePointer||!stickOrigin)return;
 const dx=e.clientX-stickOrigin.x,dy=e.clientY-stickOrigin.y;
-const length=Math.hypot(dx,dy),deadzone=4,full=52;
-const normalized=Math.min(1,Math.max(0,(length-deadzone)/((matchMedia('(pointer:fine)').matches?110:52)-deadzone)));
-const strength=Math.pow(normalized,.82);
+const length=Math.hypot(dx,dy),deadzone=2;
+const reach=matchMedia('(pointer:fine)').matches?72:38;
+const normalized=Math.min(1,Math.max(0,(length-deadzone)/(reach-deadzone)));
+const strength=Math.pow(normalized,.72);
 if(length>0){stickDirection.set(dx/length*strength,dy/length*strength)}
 else stickDirection.set(0,0);
 if(e.cancelable)e.preventDefault()
@@ -734,7 +735,7 @@ if(score>=goal&&!roundFinished){roundFinished=true;playing=false;showEnd(true,'L
 function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000||.016);last=now;if(playing){// React immediately to direction reversals; smooth only minor thumb jitter.
 const dot=stickSmoothed.dot(stickDirection);
 const reversal=dot<-.045;
-const steering=1-Math.exp(-dt*(reversal?52:32));
+const steering=1-Math.exp(-dt*(reversal?85:55));
 const keyboard=new THREE.Vector2(Number(heldKeys.has('ArrowRight')||heldKeys.has('KeyD'))-Number(heldKeys.has('ArrowLeft')||heldKeys.has('KeyA')),Number(heldKeys.has('ArrowDown')||heldKeys.has('KeyS'))-Number(heldKeys.has('ArrowUp')||heldKeys.has('KeyW')));
 if(keyboard.lengthSq()>0)keyboard.normalize();
 const direction=keyboard.lengthSq()>0?keyboard:stickDirection;
