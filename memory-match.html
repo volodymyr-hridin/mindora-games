@@ -26,8 +26,8 @@ function shareText(){return '🧠 Mindora Memory Match · '+level.toUpperCase()+
 async function copy(){try{await navigator.clipboard.writeText(shareText());$('copy').textContent='Copied ✓'}catch(e){prompt('Copy your result:',shareText())}}
 $('share').onclick=async()=>{track('share_result',{method:navigator.share?'native':'copy'});if(navigator.share){try{await navigator.share({text:shareText()})}catch(e){}}else await copy()};
 $('copy').onclick=()=>{track('share_result',{method:'copy'});copy()};
-$('restart').onclick=()=>{track('game_restart');draw()};
+$('restart').onclick=()=>{if(startAt&&!timedOut&&matched.size<deck.length&&!confirm('Restart this round? Your current matches will be lost.'))return;track('game_restart');draw()};
 $('replay').onclick=()=>{track('game_restart');draw()};
-document.querySelectorAll('.time-options button').forEach(b=>b.onclick=()=>{timeLimit=Number(b.dataset.time);document.querySelectorAll('.time-options button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));draw()});document.querySelectorAll('.level').forEach(b=>b.onclick=()=>{if(level===b.dataset.level)return;level=b.dataset.level;track('difficulty_select');draw()});
+document.querySelectorAll('.time-options button').forEach(b=>b.onclick=()=>{if(Number(b.dataset.time)===timeLimit)return;if(startAt&&!timedOut&&matched.size<deck.length&&!confirm('Change the timer and start a new round? Your current matches will be lost.'))return;timeLimit=Number(b.dataset.time);document.querySelectorAll('.time-options button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));draw()});document.querySelectorAll('.level').forEach(b=>b.onclick=()=>{if(level===b.dataset.level)return;if(startAt&&!timedOut&&matched.size<deck.length&&!confirm('Change difficulty and start a new round? Your current matches will be lost.'))return;level=b.dataset.level;track('difficulty_select');draw()});
 draw();
 </script><script src="./mascot.js"></script><script src="./questbook.js"></script><script src="./player-profile.js"></script></body></html>
