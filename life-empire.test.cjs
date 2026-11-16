@@ -80,3 +80,16 @@ test('a deliberate investment strategy can win on standard difficulty',()=>{
   }
   assert.equal(g.state().result,'win');
 });
+test('all difficulty settings initialize distinct valid scenarios',()=>{
+  for(const label of ['easy','medium','hard']){
+    const g=boot();g.modes.find(x=>x.dataset.mode===label).onclick();g.get('start').onclick();assert.equal(g.state().mode,label);assert.equal(g.state().moves,2);assert.equal(g.state().month,1);
+  }
+});
+test('energy cannot become negative and burnout triggers a recovery penalty',()=>{
+  const g=boot();g.get('start').onclick();const s=g.state();s.energy=0;s.cash=5000;const h=boot(s);h.advance();assert.equal(h.state().energy,28);assert.equal(h.state().cash,5300);
+});
+test('all random event outcomes produce valid saved states',()=>{
+  for(let n=0;n<11;n++){
+    const g=boot();g.get('start').onclick();const s=g.state();s.month=2;s.cash=40000;s.portfolio={studio:2,shop:1,fund:1};const h=boot(s,(n+.1)/11);h.advance();const next=h.state();assert.equal(next.month,3);assert.ok(next.propertyFactor>.1&&next.propertyFactor<10);assert.ok(next.fundFactor>=.3&&next.fundFactor<=3);assert.ok(Number.isFinite(next.cash));assert.ok(next.log.length<=16);
+  }
+});
