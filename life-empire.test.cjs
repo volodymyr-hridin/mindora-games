@@ -93,3 +93,10 @@ test('all random event outcomes produce valid saved states',()=>{
     const g=boot();g.get('start').onclick();const s=g.state();s.month=2;s.cash=40000;s.portfolio={studio:2,shop:1,fund:1};const h=boot(s,(n+.1)/11);h.advance();const next=h.state();assert.equal(next.month,3);assert.ok(next.propertyFactor>.1&&next.propertyFactor<10);assert.ok(next.fundFactor>=.3&&next.fundFactor<=3);assert.ok(Number.isFinite(next.cash));assert.ok(next.log.length<=16);
   }
 });
+test('isometric city draws without throwing and responds to portfolio changes',()=>{
+  const g=boot();let shapes=0;const gradient={addColorStop(){}};
+  const ctx={createLinearGradient:()=>gradient,clearRect(){},fillRect(){},beginPath(){},arc(){},ellipse(){},fill(){shapes++},moveTo(){},lineTo(){},closePath(){},fillText(){}};
+  g.get('cityCanvas').getContext=()=>ctx;
+  g.get('start').onclick();const initial=shapes;assert.ok(initial>30);
+  const s=g.state();s.cash=30000;const h=boot(s);h.get('cityCanvas').getContext=()=>ctx;h.click('Open a coffee shop');assert.ok(shapes>initial);
+});
