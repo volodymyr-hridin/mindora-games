@@ -70,19 +70,21 @@ c.fillStyle='#ffc876';c.shadowColor='#ffd286';c.shadowBlur=32;c.beginPath();c.ar
 const poly=(pts,color)=>{c.fillStyle=color;c.beginPath();c.moveTo(...pts[0]);for(const p of pts.slice(1))c.lineTo(...p);c.closePath();c.fill()};
 const tile=(x,y,col)=>poly([[x,y-27],[x+76,y],[x,y+27],[x-76,y]],col);
 const box=(x,y,height,owned,type)=>{
-const h=height;poly([[x-28,y-11-h],[x,y-22-h],[x+28,y-11-h],[x,y-h]],owned?'#edc57a':'#809fa7');
+const h=height;poly([[x-28,y-11-h],[x,y-22-h],[x+28,y-11-h],[x,y-h]],owned?'#edc57a':type==='tower'?'#a3dae4':'#809fa7');
 poly([[x-28,y-11-h],[x,y-h],[x,y],[x-28,y-11]],owned?'#ae815b':'#355b6f');
 poly([[x,y-h],[x+28,y-11-h],[x+28,y-11],[x,y]],owned?'#d3a46e':'#426a79');
 for(let f=0;f<Math.min(5,Math.floor(h/16));f++){
 const top=y-h+11+f*16;poly([[x-22,top-4],[x-14,top-1],[x-14,top+6],[x-22,top+3]],owned?'#ffe3a0':'#93c4c8');poly([[x+8,top-3],[x+17,top-6],[x+17,top+1],[x+8,top+4]],owned?'#fff2ca':'#aad0cd')}
-if(type==='shop'){poly([[x-28,y-24],[x,y-12],[x+28,y-24],[x,y-36]],'#d36c68');poly([[x-28,y-23],[x,y-11],[x,y-3],[x-28,y-15]],'#b94d4b')}
+if(type==='shop'){poly([[x-28,y-24],[x,y-12],[x+28,y-24],[x,y-36]],'#d36c68');poly([[x-28,y-23],[x,y-11],[x,y-3],[x-28,y-15]],'#b94d4b');poly([[x,y-10],[x+28,y-21],[x+28,y-13],[x,y-2]],'#f5d6a2')}
+if(type==='home'){poly([[x-32,y-12-h],[x-4,y-38-h],[x+5,y-35-h],[x-22,y-8-h]],owned?'#ffdc9c':'#d66c70');poly([[x-4,y-38-h],[x+30,y-12-h],[x+26,y-8-h],[x+5,y-35-h]],owned?'#b68a69':'#a95460')}
+if(type==='tower'){poly([[x-9,y-19-h],[x,y-23-h],[x+9,y-19-h],[x,y-15-h]],'#d5f4ee');c.fillStyle='#9fced3';c.fillRect(x-1,y-34-h,2,14)}
 };
 const owned=Math.min(15,assetCount());let index=0;
 for(let row=0;row<5;row++)for(let col=0;col<7;col++){
 const x=440+(col-row)*79,y=67+(col+row)*27;const road=row===2||col===3;tile(x,y,road?'#294b59':(row+col)%2?'#447969':'#4c806c');
 if(road){poly([[x-38,y-14],[x+38,y+14],[x+33,y+16],[x-43,y-12]],'#64807e');continue}
 const kind=(col*3+row*5)%5;if(kind===0){c.fillStyle='#335b43';c.beginPath();c.ellipse(x,y-14,19,15,0,0,7);c.fill();c.fillStyle='#64a67d';c.beginPath();c.arc(x,y-25,15,0,7);c.fill();continue}
-const isOwned=index<owned;box(x,y,24+((col*13+row*19)%4)*14,isOwned,isOwned&&count('shop')>0&&index<count('shop')?'shop':'home');index++;
+const isOwned=index<owned;const buildingType=isOwned&&count('shop')>0&&index<count('shop')?'shop':kind===1?'tower':kind===2?'home':kind===3?'shop':'office';const height=buildingType==='tower'?76+((row+col)%3)*18:buildingType==='home'?31:buildingType==='shop'?29:45+((row+col)%3)*14;box(x,y,height,isOwned,buildingType);index++;
 }
 c.fillStyle='#c8e3d1';c.font='bold 13px system-ui';c.fillText('MINDORA DISTRICT',26,28);
 }
