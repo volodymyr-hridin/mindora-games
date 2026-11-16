@@ -161,3 +161,9 @@ test('each personal dream unlocks only after its specific conditions are fulfill
     const h=boot(s);h.click('Rest & recharge');assert.ok(h.state().unlocked.includes('dream'),dream);
   }
 });
+
+test('completed game shows final score and can restart without deleting personal best',()=>{
+  const g=boot();g.get('start').onclick();const s=g.state();s.month=12;s.freedomStreak=2;s.cash=20000;s.portfolio.studio=30;
+  const h=boot(s);h.get('advance').onclick();assert.equal(h.state().result,'win');assert.match(h.get('eventText').textContent,/Final score:/);assert.equal(h.get('eventOk').textContent,'Play again →');
+  assert.ok(h.storage.has(KEY+'-best'));h.get('eventOk').onclick();assert.equal(h.storage.has(KEY),false);assert.ok(h.storage.has(KEY+'-best'));
+});
