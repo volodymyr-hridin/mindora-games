@@ -24,7 +24,7 @@ function boot(saved=null,random=.1){
   return {get,storage,modes,state:()=>JSON.parse(storage.get(KEY)),click:label=>{const action=get('actions').children.find(e=>e.children.some(c=>c.textContent===label));assert.ok(action,`Action ${label} exists`);assert.equal(action.disabled,false,`Action ${label} enabled`);action.onclick()},advance(){get('advance').onclick();if(!get('overlay').classList.hidden)get('eventOk').onclick()}};
 }
 test('JavaScript parses and a new game starts with consistent finances',()=>{
-  assert.doesNotThrow(()=>new vm.Script(script));const g=boot();g.get('start').onclick();const s=g.state();assert.equal(s.version,2);assert.equal(s.cash,2500);assert.equal(s.salary,3200);assert.equal(s.cost,2400);assert.equal(s.moves,2);
+  assert.doesNotThrow(()=>new vm.Script(script));const g=boot();g.get('start').onclick();const s=g.state();assert.equal(s.version,4);assert.equal(s.cash,2500);assert.equal(s.salary,3200);assert.equal(s.cost,2400);assert.equal(s.moves,2);
 });
 test('work, education and rest consume actions, cash and energy correctly',()=>{
   const g=boot();g.get('start').onclick();g.click('Take extra work');assert.equal(g.state().cash,3400);assert.equal(g.state().energy,56);g.click('Upgrade your skills');assert.equal(g.state().salary,3380);assert.equal(g.state().moves,0);assert.ok(g.get('actions').children.every(a=>a.disabled));g.advance();assert.equal(g.state().month,2);assert.equal(g.state().cash,3780);
@@ -50,8 +50,9 @@ test('month 180 terminates game without entering month 181',()=>{
 test('invalid or corrupted saves cannot be restored',()=>{
   const g=boot();g.get('start').onclick();const s=g.state();s.portfolio.studio=-2;const h=boot(s);assert.equal(h.get('intro').classList!==undefined,true);assert.equal(h.get('start').disabled,false);
 });
-test('v1 playtest save migrates to v2 without deleting game progress',()=>{
-  const g=boot();g.get('start').onclick();const s=g.state();delete s.fundFactor;delete s.budgetCuts;delete s.freedomStreak;delete s.debtMonths;s.version=1;s.month=23;const h=boot(s);assert.equal(h.state().month,23);assert.equal(h.state().version,2);
+test('v1, v2 and v3 playtest saves migrate to v4 without deleting game progress',()=>{
+  const g=boot();g.get('start').onclick();const s=g.state();delete s.fundFactor;delete s.budgetCuts;delete s.freedomStreak;delete s.debtMonths;s.version=1;s.month=23;const h=boot(s);assert.equal(h.state().month,23);assert.equal(h.state().version,4);
+  for(const version of [2,3]){const old=h.state();old.version=version;delete old.pendingEvent;delete old.skills;delete old.shopUpgrades;const i=boot(old);assert.equal(i.state().month,23);assert.equal(i.state().version,4)}
 });
 test('100 simulated full games never create invalid state or exceed month 180',()=>{
   const names=['Upgrade your skills','Take extra work','Rest & recharge','Buy a rental studio','Open a coffee shop','Buy index fund shares','Optimize your budget','Sell an investment'];
@@ -99,4 +100,36 @@ test('isometric city draws without throwing and responds to portfolio changes',(
   g.get('cityCanvas').getContext=()=>ctx;
   g.get('start').onclick();const initial=shapes;assert.ok(initial>30);
   const s=g.state();s.cash=30000;const h=boot(s);h.get('cityCanvas').getContext=()=>ctx;h.click('Open a coffee shop');assert.ok(shapes>initial);
+});
+test('event alternatives offer a genuine trade-off against the default outcome',()=>{
+  const g=boot();g.get('start').onclick();const s=g.state();s.month=2;s.cash=10000;
+  const opt=boot(s,.14);opt.get('advance').onclick();assert.equal(opt.state().pendingEvent,'A difficult market quarter');const afterPayday=opt.state().cash;opt.get('eventAlt').onclick();assert.equal(opt.state().pendingEvent,null);assert.equal(opt.state().propertyFactor,1);assert.equal(opt.state().cash,afterPayday-450);
+  const def=boot(s,.14);def.get('advance').onclick();def.get('eventOk').onclick();assert.equal(def.state().propertyFactor,.91);assert.equal(def.state().cash,afterPayday);
+});
+test('an unresolved choice survives reload without being applied twice',()=>{
+  const g=boot();g.get('start').onclick();const s=g.state();s.month=2;s.cash=10000;const opt=boot(s,.14);opt.get('advance').onclick();const pending=opt.state();const resumed=boot(pending,.14);assert.equal(resumed.state().pendingEvent,pending.pendingEvent);resumed.get('eventOk').onclick();assert.equal(resumed.state().propertyFactor,.91);assert.equal(resumed.state().pendingEvent,null);
+});
+test('alternative choices are disabled when unaffordable',()=>{
+  const g=boot();g.get('start').onclick();const s=g.state();s.month=2;s.cash=-350;s.salary=0;s.cost=500;const h=boot(s,.14);h.get('advance').onclick();assert.equal(h.get('eventAlt').disabled,true);h.get('eventOk').onclick();assert.equal(h.state().propertyFactor,.91);
+});
+test('career training costs escalate, returns diminish and cap is enforced',()=>{
+  const g=boot();g.get('start').onclick();const s=g.state();s.cash=100000;s.energy=100;s.skills=0;const h=boot(s);h.click('Upgrade your skills');assert.equal(h.state().cash,99400);assert.equal(h.state().salary,3380);
+  const upgraded=h.state();upgraded.energy=100;upgraded.moves=2;const i=boot(upgraded);i.click('Upgrade your skills');assert.equal(i.state().cash,98350);assert.equal(i.state().salary,3545);
+  const capped=i.state();capped.skills=8;capped.energy=100;capped.moves=2;const j=boot(capped);assert.equal(j.get('actions').children.find(b=>b.children.some(c=>c.textContent==='Upgrade your skills')).disabled,true);
+});
+test('business upgrades require ownership and increase income, then expire with last shop sale',()=>{
+  const g=boot();g.get('start').onclick();const s=g.state();s.cash=50000;const h=boot(s);assert.equal(h.get('actions').children.find(b=>b.children.some(c=>c.textContent==='Expand your coffee shops')).disabled,true);
+  h.click('Open a coffee shop');h.click('Expand your coffee shops');assert.equal(h.state().shopUpgrades,1);assert.equal(h.state().cash,33200);h.advance();assert.equal(h.state().cash,34290);h.click('Sell an investment');assert.equal(h.state().shopUpgrades,0);assert.equal(h.state().portfolio.shop,0);assert.equal(h.state().cash,46640);
+});
+test('investment paths are actually playable to completion',()=>{
+  for(const target of ['Buy a rental studio','Open a coffee shop','Buy index fund shares']){
+    const g=boot(null,.01);g.get('start').onclick();
+    for(let month=0;month<180&&!g.state().ended;month++){
+      for(let move=0;move<2;move++){
+        const a=g.get('actions').children.find(b=>b.children.some(c=>c.textContent===target));if(a&&!a.disabled)a.onclick();
+      }
+      g.advance();
+    }
+    assert.equal(g.state().result,'win',target+' should support a winning path');
+  }
 });
