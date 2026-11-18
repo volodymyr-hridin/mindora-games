@@ -25,7 +25,7 @@ function boot(saved=null,random=.1){
   const document={getElementById:get,createElement:()=>new Element(),querySelectorAll:selector=>selector==='[data-mode]'?modes:selector==='[data-role]'?roles:selector==='[data-dream]'?dreams:selector==='[data-challenge]'?challenges:selector==='[data-district]'?districts:selector==='.building'?buildings:[]};
   const context=vm.createContext({document,window:{},confirm:()=>true,Math:Object.assign(Object.create(Math),{random:()=>random}),localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)}});
   vm.runInContext(script,context);
-  return {get,storage,modes,roles,dreams,challenges,districts,state:()=>JSON.parse(storage.get(KEY)),click:label=>{const action=get('actions').children.find(e=>e.children.some(c=>c.textContent===label));assert.ok(action,`Action ${label} exists`);assert.equal(action.disabled,false,`Action ${label} enabled`);action.onclick()},advance(){get('advance').onclick();if(!get('overlay').classList.hidden)get('eventOk').onclick()}};
+  return {get,storage,modes,roles,dreams,challenges,districts,state:()=>JSON.parse(storage.get(KEY)),click:label=>{const action=get('actions').children.find(e=>e.children.some(c=>c.textContent===label));assert.ok(action,`Action ${label} exists`);assert.equal(action.disabled,false,`Action ${label} enabled`);action.onclick()},advance(){get('advance').onclick();const s=JSON.parse(storage.get(KEY)||'null');if(s?.pendingEvent)get('eventOk').onclick()}};
 }
 test('JavaScript parses and a new game starts with consistent finances',()=>{
   assert.doesNotThrow(()=>new vm.Script(script));const g=boot();g.get('start').onclick();const s=g.state();assert.equal(s.version,5);assert.equal(s.cash,2500);assert.equal(s.salary,3200);assert.equal(s.cost,2400);assert.equal(s.moves,2);
@@ -37,10 +37,24 @@ test('budget cuts cap at six and prevent unlimited expense reduction',()=>{
   const g=boot();g.get('start').onclick();let s=g.state();s.cash=20000;s.budgetCuts=6;g.storage.set(KEY,JSON.stringify(s));const restored=boot(s);assert.ok(restored.get('actions').children.find(b=>b.children.some(c=>c.textContent==='Optimize your budget')).disabled);
 });
 test('purchase, passive income, market value and sale fee remain consistent',()=>{
-  const s=boot();s.get('start').onclick();const state=s.state();state.cash=30000;const g=boot(state);g.click('Buy a rental studio');g.click('Buy index fund shares');assert.equal(g.state().cash,19000);assert.equal(g.state().portfolio.studio,1);assert.equal(g.state().portfolio.fund,1);g.advance();assert.equal(g.state().cash,19963);g.click('Sell an investment');assert.equal(g.state().portfolio.studio,0);assert.equal(g.state().cash,27563);
+  const s=boot();s.get('start').onclick();const state=s.state();state.cash=30000;const g=boot(state);g.click('Buy a rental studio');g.click('Buy index fund shares');assert.equal(g.state().cash,19600);assert.equal(g.state().mission.completed,true);assert.equal(g.state().portfolio.studio,1);assert.equal(g.state().portfolio.fund,1);g.advance();assert.equal(g.state().cash,20563);g.click('Sell an investment');assert.equal(g.state().portfolio.studio,0);assert.equal(g.state().cash,28163);
 });
 test('selling assets is possible while cash is negative',()=>{
   const g=boot();g.get('start').onclick();const s=g.state();s.cash=-800;s.portfolio.studio=1;const h=boot(s);h.click('Sell an investment');assert.equal(h.state().cash,6800);assert.equal(h.state().portfolio.studio,0);
+});
+test('city contract rewards two new investments exactly once and survives reload',()=>{
+  const a=boot();a.get('start').onclick();const s=a.state();s.cash=30000;const g=boot(s);
+  g.click('Buy a rental studio');assert.equal(g.state().mission.completed,false);
+  g.click('Buy index fund shares');assert.equal(g.state().mission.completed,true);assert.equal(g.state().cash,19600);
+  const restored=boot(g.state());restored.advance();assert.equal(restored.state().cash,20563);
+});
+test('city contract expires and changes objective at month 13',()=>{
+  const a=boot();a.get('start').onclick();const s=a.state();s.month=12;s.cash=10000;
+  const g=boot(s);g.advance();assert.equal(g.state().month,13);assert.equal(g.state().mission.kind,'passive');assert.equal(g.state().mission.season,1);assert.equal(g.state().mission.completed,false);
+});
+test('older saves without a city contract remain playable',()=>{
+  const a=boot();a.get('start').onclick();const s=a.state();delete s.mission;s.month=39;
+  const g=boot(s);assert.equal(g.state().month,39);assert.equal(g.state().mission.kind,'assets');
 });
 test('negative balance produces fees and bankruptcy after four months',()=>{
   const g=boot();g.get('start').onclick();const s=g.state();Object.assign(s,{cash:-1000,salary:0,cost:1000});const h=boot(s);for(let i=0;i<4;i++)h.advance();assert.equal(h.state().ended,true);assert.equal(h.state().result,'loss');assert.equal(h.state().debtMonths,4);
