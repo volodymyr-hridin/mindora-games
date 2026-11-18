@@ -56,6 +56,23 @@ test('older saves without a city contract remain playable',()=>{
   const a=boot();a.get('start').onclick();const s=a.state();delete s.mission;s.month=39;
   const g=boot(s);assert.equal(g.state().month,39);assert.equal(g.state().mission.kind,'assets');
 });
+test('sector cycles change prices, show forecasts, and persist consistently',()=>{
+  const a=boot();a.get('start').onclick();const s=a.state();s.cash=100000;s.month=13;
+  const g=boot(s);const card=g.get('actions').children.find(b=>b.children.some(c=>c.textContent==='Buy a rental studio'));
+  assert.equal(card.children.at(-1).textContent,'$10,080');
+  assert.match(g.get('rivals').textContent,/MARKET CYCLE/);
+  assert.match(g.get('rivals').textContent,/next cycle/);
+  const h=boot(g.state());assert.equal(h.get('actions').children.find(b=>b.children.some(c=>c.textContent==='Buy a rental studio')).children.at(-1).textContent,'$10,080');
+});
+test('market-adjusted purchase prices are enforced, not just displayed',()=>{
+  const a=boot();a.get('start').onclick();const s=a.state();s.month=13;s.cash=9000;
+  const g=boot(s);const card=g.get('actions').children.find(b=>b.children.some(c=>c.textContent==='Buy a rental studio'));
+  assert.equal(card.disabled,true);
+});
+test('repeated real-estate boom events never inflate prices without limit',()=>{
+  const a=boot(null,.01);a.get('start').onclick();const s=a.state();s.cash=50000;
+  const g=boot(s,.01);for(let i=0;i<120;i++)g.advance();assert.ok(g.state().propertyFactor<=1.6);
+});
 test('negative balance produces fees and bankruptcy after four months',()=>{
   const g=boot();g.get('start').onclick();const s=g.state();Object.assign(s,{cash:-1000,salary:0,cost:1000});const h=boot(s);for(let i=0;i<4;i++)h.advance();assert.equal(h.state().ended,true);assert.equal(h.state().result,'loss');assert.equal(h.state().debtMonths,4);
 });
@@ -148,7 +165,7 @@ test('investment paths are actually playable to completion',()=>{
       }
       g.advance();
     }
-    assert.equal(g.state().result,'win',target+' should support a winning path');
+    assert.equal(g.state().result,'win',target+' should support a winning path; final '+JSON.stringify({month:g.state().month,cash:g.state().cash,cost:g.state().cost,portfolio:g.state().portfolio}));
   }
 });
 test('characters and world scenarios produce different starting conditions',()=>{
