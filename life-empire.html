@@ -78,7 +78,7 @@ function assetIncome(k){const base=assets[k].net+(k==='shop'?state.shopUpgrades*
 function debts(){return Array.isArray(state?.loans)?state.loans:[]}
 function totalDebt(){return debts().reduce((n,l)=>n+l.balance,0)}
 function loanMonthlyPayment(principal,apr=.065,months=60){const rate=apr/12;return Math.round(100*(principal*rate/(1-Math.pow(1+rate,-months))))/100}
-function debtService(){return debts().reduce((n,l)=>n+Math.min(l.payment,l.balance*(1+l.apr/12)),0)}
+function debtService(){return debts().reduce((n,l)=>n+Math.min(l.remaining<=1?l.balance*(1+l.apr/12):l.payment,l.balance*(1+l.apr/12)),0)}
 function monthlyNet(){return state.salary+passive()-state.cost-debtService()}
 function monthlyExpenses(){return state.cost+debtService()}
 function creditOffer(k,price=marketValue(k)){const down=Math.ceil(price*.35),principal=Math.max(0,price-down),payment=loanMonthlyPayment(principal);return {down,principal,payment,apr:.065,months:60}}
@@ -87,7 +87,7 @@ function financePurchase(k,price=marketValue(k),lot=null,fromDeal=false){
  if(lot&&state.cityOwned?.[lot])return false;
  const offer=creditOffer(k,price);
  if(state.cash<offer.down||monthlyNet()+effectiveIncome(k)-offer.payment< -Math.max(300,state.salary*.45))return false;
- state.cash-=offer.down;state.portfolio[k]++;
+ state.cash=Math.round((state.cash-offer.down)*100)/100;state.portfolio[k]++;
  if(lot)(state.cityOwned||(state.cityOwned={}))[lot]=k;
  const id='loan-'+(state.nextLoanId=(state.nextLoanId||0)+1);
  (state.loans||(state.loans=[])).push({id,asset:k,lotId:lot||null,balance:offer.principal,payment:offer.payment,apr:offer.apr,remaining:offer.months});
@@ -97,7 +97,7 @@ function financePurchase(k,price=marketValue(k),lot=null,fromDeal=false){
 }
 function makeLoanPayments(){
  let paid=0;const loans=debts();
- for(const l of loans){const interest=Math.round(l.balance*l.apr/12*100)/100;const p=Math.min(l.payment,l.balance+interest);l.balance=Math.max(0,Math.round((l.balance+interest-p)*100)/100);l.remaining=Math.max(0,(l.remaining||1)-1);paid+=p}
+ for(const l of loans){const interest=Math.round(l.balance*l.apr/12*100)/100;const p=Math.min(l.remaining<=1?l.balance+interest:l.payment,l.balance+interest);l.balance=Math.max(0,Math.round((l.balance+interest-p)*100)/100);l.remaining=Math.max(0,(l.remaining||1)-1);paid+=p}
  state.loans=loans.filter(l=>l.balance>.01);
  return paid;
 }
@@ -107,7 +107,7 @@ function repayDebt(){
  const payment=Math.min(Math.max(0,state.cash-300),loan.balance);
  if(payment<100)return;loan.balance=Math.round((loan.balance-payment)*100)/100;
  state.loans=debts().filter(l=>l.balance>.01);
- state.cash-=payment;state.moves--;
+ state.cash=Math.round((state.cash-payment)*100)/100;state.moves--;
  log('Paid down '+money(payment)+' on '+assets[loan.asset].name+' loan.');
  persist();render();openWorld(true);
 }
@@ -151,7 +151,7 @@ function act(id){const a=actions.find(x=>x.id===id);if(!a||!canAct(a))return;if(
 if(id==='learn'){const gain=Math.max(75,180-state.skills*15);state.skills++;state.energy-=12;state.salary+=gain;log('Studied new skills. Salary +'+money(gain)+'/month.')}else if(id==='work'){state.energy-=24;state.cash+=900;log('Worked extra hours. Earned $900.')}else if(id==='rest'){state.energy=Math.min(100,state.energy+32);log('Made time to rest and recover.')}else if(id==='expand'){state.shopUpgrades++;log('Expanded coffee-shop operations: +$70/month per shop.')}else if(id==='marketing'){state.rivalPressure=Math.max(0,state.rivalPressure-12);log('Business strategy lowered competitive pressure by 12 points.')}else if(id==='budget'){state.budgetCuts++;state.cost=Math.max(500,state.cost-65);log('Optimized household expenses: −$65/month.')}else if(id==='sell'){const k=Object.keys(assets).filter(k=>count(k)).sort((a,b)=>marketValue(b)-marketValue(a))[0];const proceeds=Math.round(marketValue(k)*.95),payoff=collectAssetSaleDebt(k,null);state.portfolio[k]--;state.cash+=proceeds-payoff;if(k==='shop'&&count('shop')===0){state.shopUpgrades=0;log('Store expansion value was written off after the last shop closed.')}log('Sold '+assets[k].name+' for '+money(proceeds)+' after transaction fees.')}else{state.portfolio[id]++;if(lot)(state.cityOwned|| (state.cityOwned={}))[lot]=id;log('Acquired '+assets[id].name+'.')}
 state.moves--;persist();selectedBuilding=null;render();$('worldPanel').classList.remove('open');}
 function sellSpecific(k,lot=null){if(lot&&state.cityOwned?.[lot]!==k)return;if(!Object.hasOwn(assets,k)||!count(k)||!canAct(actions.find(a=>a.id==='sell')))return;const gross=Math.round(marketValue(k)*.95),payoff=collectAssetSaleDebt(k,lot),proceeds=gross-payoff;state.portfolio[k]--;state.cash+=proceeds;if(k==='shop'&&!count('shop'))state.shopUpgrades=0;if(lot){delete state.cityOwned[lot];if(state.cityLevels)delete state.cityLevels[lot]}state.moves--;log('Sold '+assets[k].name+' for '+money(gross)+' (loan payoff '+money(payoff)+', net '+money(proceeds)+').');persist();render()}
-function advance(){if(!state||state.ended||modalOpen)return;const income=passive();const gross=state.salary+income;const loanPaid=makeLoanPayments();const net=gross-state.cost-loanPaid;state.cash+=net;log('Payday: salary '+money(state.salary)+' + assets '+money(income)+' − living '+money(state.cost)+' − debt '+money(loanPaid)+'.');if(state.energy<=8){state.cash-=500;log('Burnout! Recovery costs: $500.');state.energy=20}state.energy=Math.max(0,Math.min(100,state.energy+8));log('Monthly cash flow: '+money(net)+'.');
+function advance(){if(!state||state.ended||modalOpen)return;const income=passive();const gross=state.salary+income;const loanPaid=makeLoanPayments();const net=gross-state.cost-loanPaid;state.cash=Math.round((state.cash+net)*100)/100;log('Payday: salary '+money(state.salary)+' + assets '+money(income)+' − living '+money(state.cost)+' − debt '+money(loanPaid)+'.');if(state.energy<=8){state.cash-=500;log('Burnout! Recovery costs: $500.');state.energy=20}state.energy=Math.max(0,Math.min(100,state.energy+8));log('Monthly cash flow: '+money(net)+'.');
 if(income>=monthlyExpenses()&&state.cash>0){state.freedomStreak++;log('Independent income covers all living costs and debt: '+state.freedomStreak+'/3 months.')}else state.freedomStreak=0;
 if(state.freedomStreak>=3&&state.phase!=='growth'){state.phase='growth';log('Financial freedom unlocked! Grow your wealth and complete your personal dream to win.');}
 if(state.phase==='growth'&&dreamComplete()&&worth()>=75000&&income>=monthlyExpenses()*1.35){finish(true);return}
