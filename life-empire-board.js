@@ -29,7 +29,7 @@ const extras={...extra0,...extra1,...extra2,...extra3,...extra4,...extra5,...ext
 export function createCity(host,onSelect){
 const scene=new T.Scene();scene.background=new T.Color('#badfe9');
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;host.append(renderer.domElement);
-const camera=new T.PerspectiveCamera(40,1,.1,700),center=new T.Vector3(0,0,0);let zoom=1.35,active=true,selected=null;
+const camera=new T.PerspectiveCamera(40,1,.1,700),center=new T.Vector3(-4,0,7);let zoom=1.55,active=true,selected=null;
 scene.add(new T.HemisphereLight(0xfff5e7,0x6a9568,2.4));const sun=new T.DirectionalLight(0xffe2b2,3);sun.position.set(-35,60,25);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-48,right:48,top:48,bottom:-48,near:1,far:150});sun.shadow.normalBias=.03;scene.add(sun);
 const materials=new Map(),geometries=new Map(),lots=[],cars=[],water=[],labels=new Map();
 function material(c){if(!materials.has(c))materials.set(c,new T.MeshStandardMaterial({color:c,roughness:.8}));return materials.get(c)}
@@ -58,31 +58,56 @@ return h+(type==='studio'||type==='learn'||type==='delivery'?1.55:.45)}
 box(scene,0,-.55,0,100,.95,100,0x9fc181);
 // Curated blocks with generous plazas and differently sized footprints.
 const catalog={studio:'Homes',shop:'Coffee shop',bakery:'Bakery',fund:'Bank',delivery:'Logistics',software:'Tech studio',work:'Career office',learn:'Academy',rest:'City park',budget:'Market'};
-// Organic coastal city: concentric winding avenues and a civic square.
-const spriteLoader=new T.TextureLoader(),worldWidth=350,worldDepth=350;
-const streetLines=[],routes=[],allArt={...artwork,...extras};
+// Asymmetric coastal districts connected by winding avenues.
+const spriteLoader=new T.TextureLoader(),worldWidth=430,worldDepth=370;
+const routes=[],allArt={...artwork,...extras};
 function sprite(parent,key,x,z,h){const tex=spriteLoader.load(allArt[key],t=>{const im=t.image;sp.scale.x=h*im.width/im.height});tex.colorSpace=T.SRGBColorSpace;const sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,alphaTest:.22,depthWrite:false,toneMapped:false}));sp.center.set(.5,.05);sp.scale.set(h,h,1);sp.position.set(x,.24,z);parent.add(sp);return sp}
+
 function disc(x,z,r,color,y=.03){return cyl(scene,x,y,z,r,r,.08,color,80)}
-disc(0,0,174,0x94bc65,-.15);disc(0,0,23,0xe6c69c,.03);disc(0,0,17,0x75ab59,.08);disc(0,0,10,0xe9d5b1,.13);
-const fountainKey='park-1';if(extras[fountainKey])sprite(scene,fountainKey,0,0,10);
-const rings=[30,55,82,110,139,164];
-function polar(radius,a){const wobble=radius>35?3.2*Math.sin(a*3+radius*.04)+2*Math.cos(a*5):1.1*Math.sin(a*3);return [(radius+wobble)*Math.cos(a),(radius+wobble)*Math.sin(a)]}
+function curve(points){return new T.CatmullRomCurve3(points.map(p=>new T.Vector3(p[0],0,p[1]))).getPoints(Math.max(20,Math.ceil(points.length*12))).map(p=>[p.x,p.z])}
 function strip(points,width,color,y){const verts=[],indices=[];for(let j=0;j<points.length;j++){const a=points[Math.max(0,j-1)],b=points[Math.min(points.length-1,j+1)],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)||1;for(const sign of [-1,1])verts.push(points[j][0]-sign*dz/len*width/2,y,points[j][1]+sign*dx/len*width/2);if(j){const k=j*2;indices.push(k-2,k,k-1,k-1,k,k+1)}}const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(verts,3));geo.setIndex(indices);geo.computeVertexNormals();const m=new T.Mesh(geo,new T.MeshBasicMaterial({color,side:T.DoubleSide}));scene.add(m)}
 function avenue(pts,width){strip(pts,width+1.8,0xe2d4b0,.045);strip(pts,width,0x65757d,.07);for(let i=0;i+1<pts.length;i+=2)strip([pts[i],pts[i+1]],.12,0xffe8b1,.095);routes.push(pts)}
-for(const rad of rings){const pts=Array.from({length:121},(_,i)=>polar(rad,i/120*Math.PI*2));avenue(pts,rad===30?5.8:4.5)}
-for(let j=0;j<8;j++){const angle=j*Math.PI/4+.13;const pts=Array.from({length:55},(_,i)=>{const r=30+i*(134/54);return polar(r,angle+.065*Math.sin(r*.06+j))});avenue(pts,4.3)}
-// Waterfront outside the outer boulevard, with park landscaping.
-const waterGeo=new T.PlaneGeometry(400,400);const sea=new T.Mesh(waterGeo,new T.MeshBasicMaterial({color:0x3eb1d3}));sea.rotation.x=-Math.PI/2;sea.position.y=-.48;scene.add(sea);
-for(let i=0;i<16;i++){const a=i*Math.PI*2/16;const p=polar(20,a);tree(scene,p[0],p[1],1.3);if(i%2===0)lamp(scene,p[0]*.8,p[1]*.8)}
+
+const outline=[[-205,-170],[-75,-178],[70,-168],[195,-155],[210,-50],[198,45],[160,95],[95,125],[40,140],[-30,155],[-98,151],[-157,164],[-208,126],[-216,-20]];
+function landPolygon(points,color,y){const shape=new T.Shape();points.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));shape.closePath();const obj=new T.Mesh(new T.ShapeGeometry(shape),new T.MeshBasicMaterial({color,side:T.DoubleSide}));obj.rotation.x=-Math.PI/2;obj.position.y=y;scene.add(obj)}
+landPolygon(outline,0x92ba66,-.12);const sea=new T.Mesh(new T.PlaneGeometry(900,900),new T.MeshBasicMaterial({color:0x36a9cc}));sea.rotation.x=-Math.PI/2;sea.position.y=-.5;scene.add(sea);
+const centerPlaza=[-4,-9];disc(...centerPlaza,17,0xe6cb9f,.03);disc(...centerPlaza,10,0x82b659,.08);disc(...centerPlaza,5.5,0xd8c0a0,.13);
+const fountainKey=Object.keys(extras).find(k=>k.startsWith('park-'));if(fountainKey)sprite(scene,fountainKey,-4,-9,7);
+const paths=[
+[[-200,-100],[-145,-110],[-95,-83],[-55,-47],[-24,-24],[-4,-29],[17,-24],[38,-8],[72,4],[123,-7],[202,-37]],
+[[-205,30],[-150,20],[-100,32],[-56,17],[-24,6],[-4,12],[18,6],[48,30],[95,44],[158,20],[198,4]],
+[[-120,-168],[-112,-115],[-97,-74],[-82,-26],[-101,24],[-88,76],[-61,130]],
+[[40,-165],[25,-120],[38,-85],[49,-44],[38,-8],[48,30],[65,73],[100,116]],
+[[-185,-165],[-171,-118],[-163,-68],[-150,-31],[-159,16],[-179,63],[-194,119]],
+[[135,-160],[128,-108],[145,-68],[123,-7],[158,20],[148,62],[123,103]],
+[[-200,93],[-155,84],[-115,95],[-75,104],[-34,89],[14,77],[65,73],[115,86],[158,70]],
+[[-198,-148],[-140,-145],[-74,-128],[-22,-140],[35,-125],[90,-140],[145,-120],[194,-132]],
+[[-55,-160],[-65,-114],[-50,-80],[-55,-47]],
+[[-48,18],[-33,52],[-34,89],[-16,135]],
+[[85,-138],[78,-96],[88,-60],[72,4]],
+[[195,-85],[145,-68],[88,-60],[49,-44],[-1,-62],[-50,-80],[-97,-74],[-163,-68],[-206,-54]]
+];
+for(let i=0;i<paths.length;i++)avenue(curve(paths[i]),i<2?6:4.5);
+const coast=curve([[-200,120],[-153,139],[-105,130],[-58,139],[-15,122],[40,115],[92,94],[150,83],[190,52]]);strip(coast,6,0xe8d3a9,.035);
+// Park and river corridor kept clear of buildings.
+const river=curve([[-208,69],[-187,49],[-169,59],[-145,104],[-114,118],[-86,148]]);strip(river,12,0x36a9cc,.12);strip(river,8,0x49bfe0,.13);
+for(const x of [-180,-145,-110]){const p=river.reduce((a,b)=>Math.abs(b[0]-x)<Math.abs(a[0]-x)?b:a);strip([[p[0]-7,p[1]+6],[p[0]+7,p[1]-6]],4,0xcdb38d,.17)}
+function distSeg(x,z,a,b){let dx=b[0]-a[0],dz=b[1]-a[1];let t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz)}
+function distRoute(x,z,line){let d=Infinity;for(let i=1;i<line.length;i++)d=Math.min(d,distSeg(x,z,line[i-1],line[i]));return d}
 const buildingExtra=Object.keys(extras).filter(k=>/^(building|landmark|industry|home|shop|leisure)-/.test(k));
 const groups={};for(const key of Object.keys(artwork)){const type=key.split('-')[0];(groups[type]||=[]).push(key)}
 const layout=[];const order=['studio','shop','fund','bakery','hospital','budget','learn','delivery','clinic','work','software','rest','pharmacy','dentist','vet','gym','cinema','hotel',...Object.keys(groups)];while(order.some(t=>groups[t]?.length)){for(const t of order)if(groups[t]?.length)layout.push(groups[t].shift())}
 // Preserve the existing ownership IDs and distribute the new architecture among them.
 const merged=[];for(let i=0;i<Math.max(layout.length,buildingExtra.length);i++){if(layout[i])merged.push(layout[i]);if(buildingExtra[i])merged.push(buildingExtra[i])}
-const places=[];for(let j=0;j<rings.length-1;j++){const rr=(rings[j]+rings[j+1])/2,count=Math.floor(rr*2*Math.PI/12.4);for(let k=0;k<count;k++){const ang=2*Math.PI*(k+.42)/count+j*.18;const nearSpoke=Math.abs(Math.sin((ang-.13)*4));if(nearSpoke<.15)continue;const [x,z]=polar(rr,ang);places.push([x,z])}}
-const decoration=Object.keys(extras).filter(k=>/^(park|street|terrain|tree)-/.test(k));
-for(let j=0;j<decoration.length;j++){const a=j*2.399963;const rad=j<19?18+((j%3)*1.7):j<40?169:25+(j*19%125);const [x,z]=polar(rad,a);const key=decoration[j];let h=key.startsWith('park')?5.2:key.startsWith('street')?2.2:key.startsWith('tree')?3.8:2.8;if(j>=40&&places.some(p=>Math.hypot(p[0]-x,p[1]-z)<6))continue;sprite(scene,key,x,z,h)}
-for(let n=0;n<merged.length&&n<places.length;n++){const key=merged[n],[bx,bz]=places[n];const district=new T.Group();district.position.set(bx,0,bz);scene.add(district);if(n%3===0)tree(district,-4.3,3.8,.65);
+
+const places=[],candidates=[];let seed=8191;function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
+function inside(x,z){let hit=false;for(let i=0,j=outline.length-1;i<outline.length;j=i++){const a=outline[i],b=outline[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
+for(let i=0;i<18000;i++){const x=-204+rand()*403,z=-163+rand()*308;if(!inside(x,z)||Math.hypot(x+4,z+9)<23||distRoute(x,z,river)<12||distRoute(x,z,coast)<8)continue;let d=Infinity;for(const line of routes)d=Math.min(d,distRoute(x,z,line));if(d<7||d>28)continue;candidates.push({x,z,d,score:d+rand()*11})}
+candidates.sort((a,b)=>a.score-b.score);for(const p of candidates){if(places.every(q=>Math.hypot(q[0]-p.x,q[1]-p.z)>=10.8))places.push([p.x,p.z]);if(places.length>=merged.length)break}
+// Industry towards northwest, offices north, residential and commerce mixed along streets.
+const positionOrder=places.map((p,i)=>({p,i}));const used=new Set();const assigned=[];for(const key of merged){let type=key.split('-')[0];let ranked=positionOrder.filter(o=>!used.has(o.i));ranked.sort((a,b)=>{const score=o=>{const [x,z]=o.p;let bias=0;if(['industry','delivery'].includes(type))bias=Math.hypot(x+140,z+125)*.8;else if(['software','work','fund'].includes(type))bias=Math.hypot(x-20,z+85)*.55;else if(['hotel','leisure'].includes(type))bias=Math.hypot(x-120,z-75)*.45;else bias=Math.hypot(x,z)*.12;return bias+((o.i*73+key.length*37)%97)*.65};return score(a)-score(b)});if(ranked.length){used.add(ranked[0].i);assigned.push([key,ranked[0].p])}}
+const decoration=Object.keys(extras).filter(k=>/^(park|street|terrain|tree)-/.test(k));for(let j=0;j<decoration.length;j++){const key=decoration[j];if(key===fountainKey)continue;let p=null;for(let tries=0;tries<400;tries++){const x=-200+rand()*392,z=-159+rand()*303;if(inside(x,z)&&Math.hypot(x+4,z+9)>7&&places.every(q=>Math.hypot(q[0]-x,q[1]-z)>6)&&routes.every(l=>distRoute(x,z,l)>4)&&distRoute(x,z,river)>6){p=[x,z];break}}if(p)sprite(scene,key,...p,key.startsWith('park')?5.2:key.startsWith('tree')?3.6:2.3)}
+for(let n=0;n<assigned.length;n++){const [key,[bx,bz]]=assigned[n];const district=new T.Group();district.position.set(bx,0,bz);scene.add(district);if(n%3===0)tree(district,-4.3,3.8,.65);
 const type=key.split('-')[0],economyType=({hospital:'rest',clinic:'rest',pharmacy:'budget',dentist:'rest',vet:'rest',gym:'rest',cinema:'rest',hotel:'studio',home:'studio',industry:'delivery',building:'work',landmark:'rest',leisure:'rest'})[type]||type;const id='art-'+key,g=new T.Group();g.position.set(0,.25,0);district.add(g);const model=new T.Group();g.add(model);const tex=spriteLoader.load(allArt[key],t=>{const im=t.image;sp.scale.x=sp.scale.y*im.width/im.height;});tex.colorSpace=T.SRGBColorSpace;const sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,alphaTest:.22,depthWrite:false,toneMapped:false}));sp.center.set(.5,0);sp.scale.set(10.3,9.8,1);model.add(sp);const ring=new T.Mesh(new T.RingGeometry(2.5,2.76,40),new T.MeshBasicMaterial({color:0xffce55,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.024;ring.visible=false;g.add(ring);const title=({hospital:'Hospital',clinic:'Clinic',pharmacy:'Pharmacy',dentist:'Dentist',vet:'Veterinary clinic',gym:'Gym',cinema:'Cinema',hotel:'Hotel'})[type]||catalog[type]||type;const own=textSprite('OWNED','#427a54');own.position.y=8.1;own.visible=false;g.add(own);g.userData.lot=id;lots.push({id,type:economyType,g,model,ring,own,sp,title})}
 const vehicleKeys=Object.keys(extras).filter(k=>k.startsWith('vehicle-'));for(let i=0;i<vehicleKeys.length;i++){const g=new T.Group();scene.add(g);sprite(g,vehicleKeys[i],0,0,1.75);cars.push(g)}
 function view(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;const f=(w/h<.8?1.25:1)/zoom;camera.position.set(center.x+32*f,49*f,center.z+32*f);camera.lookAt(center);camera.updateProjectionMatrix()}
