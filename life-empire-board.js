@@ -1,5 +1,22 @@
 import * as T from 'https://esm.sh/three@0.170.0';
-import {artwork} from './life-empire-artwork.js';
+import {artwork as original} from './life-empire-artwork.js';
+import pack0 from './art-pack-0.js';
+import pack1 from './art-pack-1.js';
+import pack2 from './art-pack-2.js';
+import pack3 from './art-pack-3.js';
+import pack4 from './art-pack-4.js';
+import pack5 from './art-pack-5.js';
+import pack6 from './art-pack-6.js';
+import pack7 from './art-pack-7.js';
+import pack8 from './art-pack-8.js';
+import pack9 from './art-pack-9.js';
+import pack10 from './art-pack-10.js';
+import pack11 from './art-pack-11.js';
+import pack12 from './art-pack-12.js';
+import pack13 from './art-pack-13.js';
+import pack14 from './art-pack-14.js';
+import pack15 from './art-pack-15.js';
+const artwork={...original,...pack0,...pack1,...pack2,...pack3,...pack4,...pack5,...pack6,...pack7,...pack8,...pack9,...pack10,...pack11,...pack12,...pack13,...pack14,...pack15};
 // Original art geometry; no third-party model downloads.
 export function createCity(host,onSelect){
 const scene=new T.Scene();scene.background=new T.Color('#badfe9');
@@ -32,20 +49,22 @@ else {h=2.5;box(g,0,h/2,0,4,h,3.1,0x9dc3a2);roof(g,4.4,3.6,h,0x538d77);facade(g,
 return h+(type==='studio'||type==='learn'||type==='delivery'?1.55:.45)}
 box(scene,0,-.55,0,100,.95,100,0x9fc181);
 // Curated blocks with generous plazas and differently sized footprints.
-for(const x of [-31,-10,12,33]){box(scene,x,.01,0,4.7,.1,98,0x75858b);for(let z=-47;z<48;z+=5)box(scene,x,.07,z,.12,.015,2.25,0xf7e5ad)}
-for(const z of [-31,-10,13,34]){box(scene,0,.02,z,98,.12,4.7,0x75858b);for(let x=-47;x<48;x+=5)box(scene,x,.09,z,2.25,.015,.12,0xf7e5ad)}
 const catalog={studio:'Homes',shop:'Coffee shop',bakery:'Bakery',fund:'Bank',delivery:'Logistics',software:'Tech studio',work:'Career office',learn:'Academy',rest:'City park',budget:'Market'};
-const blocks=[[-20,-20,['studio','studio','studio','studio']], [1,-20,['fund','work','learn','budget']], [23,-20,['software','delivery','software','delivery']],[-20,1,['studio','shop','studio','bakery']],[1,1,['shop','fund','bakery','rest']],[23,1,['software','work','delivery','shop']],[-20,24,['studio','studio','studio','bakery']],[1,24,['shop','rest','budget','learn']],[23,24,['delivery','software','bakery','fund']]];
-const spriteLoader=new T.TextureLoader(),spriteTextures=new Map();for(const [type,url] of Object.entries(artwork)){const tex=spriteLoader.load(url);tex.colorSpace=T.SRGBColorSpace;spriteTextures.set(type,tex)}
-const counts={};for(const [bx,bz,types] of blocks){const district=new T.Group();district.position.set(bx,0,bz);scene.add(district);plaza(district,17,17);for(const x of [-7.6,7.6])for(const z of [-7.6,7.6]){tree(district,x,z,.9);lamp(district,x*.83,z*.83)}
-for(let j=0;j<types.length;j++){const type=types[j],id='v2-'+type+'-'+(counts[type]=(counts[type]||0)+1),g=new T.Group();g.position.set((j%2?1:-1)*4.1,.15,(j>1?1:-1)*4.1);district.add(g);const model=new T.Group();g.add(model);let top;if(spriteTextures.has(type)){const tex=spriteTextures.get(type),sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,alphaTest:.10,depthWrite:true}));sp.center.set(.5,0);sp.scale.set(8.2,7.8,1);sp.position.y=.08;model.add(sp);top=7.7}else{top=building(type,counts[type],model)}const ring=new T.Mesh(new T.RingGeometry(2.65,2.9,40),new T.MeshBasicMaterial({color:0xffcf59,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.025;ring.visible=false;g.add(ring);const sp=textSprite(catalog[type]);sp.position.y=top+1;g.add(sp);const own=textSprite('OWNED','#427a54');own.position.y=top+2.05;own.visible=false;g.add(own);g.userData.lot=id;lots.push({id,type,g,model,ring,own,sp})}}
+// Each artwork is placed exactly once. Mix uses within districts.
+const groups={};for(const key of Object.keys(artwork)){const type=key.split('-')[0];(groups[type]||=[]).push(key)}
+const layout=[];const order=['studio','shop','fund','bakery','hospital','budget','learn','delivery','clinic','work','software','rest','pharmacy','dentist','vet','gym','cinema','hotel'];while(order.some(t=>groups[t]?.length)){for(const t of order)if(groups[t]?.length)layout.push(groups[t].shift())}
+const spriteLoader=new T.TextureLoader();const blocksWide=6,blocksDeep=6,spacing=19;
+const worldExtent=blocksWide*spacing;box(scene,0,-.58,0,worldExtent+16,.94,worldExtent+16,0x91b86b);
+for(let i=0;i<=blocksWide;i++){const p=(i-blocksWide/2)*spacing;box(scene,p,.05,0,4.4,.12,worldExtent+4,0x667780);box(scene,0,.05,p,worldExtent+4,.12,4.4,0x667780);for(let j=-worldExtent/2;j<worldExtent/2;j+=4){box(scene,p,.12,j,.09,.015,1.6,0xfbe7a5);box(scene,j,.12,p,1.6,.015,.09,0xfbe7a5)}}
+for(let b=0;b<Math.ceil(layout.length/4);b++){const bx=(b%blocksWide-(blocksWide-1)/2)*spacing,bz=(Math.floor(b/blocksWide)-(blocksDeep-1)/2)*spacing;const district=new T.Group();district.position.set(bx,0,bz);scene.add(district);box(district,0,.13,0,14.4,.18,14.4,0xead7b6);for(const x of [-6.7,6.7])for(const z of [-6.7,6.7]){tree(district,x,z,.9);lamp(district,x*.9,z*.9)}
+for(let j=0;j<4;j++){const key=layout[b*4+j];if(!key)continue;const type=key.split('-')[0],economyType=({hospital:'rest',clinic:'rest',pharmacy:'budget',dentist:'rest',vet:'rest',gym:'rest',cinema:'rest',hotel:'studio'})[type]||type;const id='art-'+key,g=new T.Group();g.position.set((j%2?1:-1)*3.65,.25,(j>1?1:-1)*3.65);district.add(g);const model=new T.Group();g.add(model);const tex=spriteLoader.load(artwork[key],t=>{const im=t.image;sp.scale.x=sp.scale.y*im.width/im.height;});tex.colorSpace=T.SRGBColorSpace;const sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,alphaTest:.12,depthWrite:false}));sp.center.set(.5,0);sp.scale.set(7.6,7.3,1);model.add(sp);const ring=new T.Mesh(new T.RingGeometry(2.5,2.76,40),new T.MeshBasicMaterial({color:0xffce55,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.024;ring.visible=false;g.add(ring);const title=({hospital:'Hospital',clinic:'Clinic',pharmacy:'Pharmacy',dentist:'Dentist',vet:'Veterinary clinic',gym:'Gym',cinema:'Cinema',hotel:'Hotel'})[type]||catalog[type]||type;const own=textSprite('OWNED','#427a54');own.position.y=8.1;own.visible=false;g.add(own);g.userData.lot=id;lots.push({id,type:economyType,g,model,ring,own,sp,title})}}
 for(let i=0;i<12;i++){const g=new T.Group();box(g,0,.34,0,.83,.48,1.65,[0xe8a34c,0x629bb8,0xc76a60,0xf3e6ca][i%4]);box(g,0,.72,-.12,.72,.3,.82,0x537f94);for(const x of [-.43,.43])for(const z of [-.5,.5]){const m=cyl(g,x,.18,z,.22,.22,.16,0x42494d,10);m.rotation.z=Math.PI/2}scene.add(g);cars.push(g)}
 function view(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;const f=(w/h<.8?1.25:1)/zoom;camera.position.set(center.x+36*f,48*f,center.z+36*f);camera.lookAt(center);camera.updateProjectionMatrix()}
 new ResizeObserver(view).observe(host);view();
 const ray=new T.Raycaster(),ndc=new T.Vector2(),pointers=new Map();let drag=false,start=null,pinch=0;const el=renderer.domElement;el.style.touchAction='none';
-function select(l){selected=l;for(const a of lots)a.ring.visible=a===l||a.own.visible;onSelect({id:l.id,type:l.type})}
+function select(l){selected=l;for(const a of lots)a.ring.visible=a===l||a.own.visible;onSelect({id:l.id,type:l.type,title:l.title})}
 el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){drag=false;start=[e.clientX,e.clientY]}if(pointers.size===2){drag=true;const a=[...pointers.values()];pinch=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])}});
-el.addEventListener('pointermove',e=>{const prev=pointers.get(e.pointerId);if(!prev)return;pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===2){const a=[...pointers.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);zoom=T.MathUtils.clamp(zoom*d/Math.max(1,pinch),.65,2.5);pinch=d;view();return}if(start&&Math.hypot(e.clientX-start[0],e.clientY-start[1])>8)drag=true;if(drag){const dx=(e.clientX-prev[0])*.09/zoom,dy=(e.clientY-prev[1])*.09/zoom;center.x=T.MathUtils.clamp(center.x-dx-dy,-38,38);center.z=T.MathUtils.clamp(center.z+dx-dy,-38,38);view()}});
+el.addEventListener('pointermove',e=>{const prev=pointers.get(e.pointerId);if(!prev)return;pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===2){const a=[...pointers.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);zoom=T.MathUtils.clamp(zoom*d/Math.max(1,pinch),.65,2.5);pinch=d;view();return}if(start&&Math.hypot(e.clientX-start[0],e.clientY-start[1])>8)drag=true;if(drag){const dx=(e.clientX-prev[0])*.09/zoom,dy=(e.clientY-prev[1])*.09/zoom;center.x=T.MathUtils.clamp(center.x-dx-dy,-58,58);center.z=T.MathUtils.clamp(center.z+dx-dy,-58,58);view()}});
 el.addEventListener('pointerup',e=>{if(!drag&&pointers.size===1){const r=el.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);for(const hit of ray.intersectObjects(lots.map(l=>l.g),true)){let o=hit.object;while(o&&!o.userData.lot)o=o.parent;if(o){const l=lots.find(l=>l.id===o.userData.lot);if(l){select(l);break}}}}pointers.delete(e.pointerId)});el.addEventListener('pointercancel',e=>pointers.delete(e.pointerId));el.addEventListener('wheel',e=>{e.preventDefault();zoom=T.MathUtils.clamp(zoom*Math.exp(-e.deltaY*.001),.65,2.5);view()},{passive:false});
 function frame(ms){requestAnimationFrame(frame);if(!active||!host.clientWidth)return;const t=ms/1000;cars.forEach((g,i)=>{const v=(t*(2+i%3)+i*17)%94-47;const lane=[-31,-10,12,33][i%4];if(i%2){g.position.set(v,.1,lane+.9);g.rotation.y=Math.PI/2}else{g.position.set(lane-.9,.1,v);g.rotation.y=0}});water.forEach((f,i)=>f.position.y=.99+Math.sin(t*2+i)*.035);renderer.render(scene,camera)}requestAnimationFrame(frame);
 return {sync(state){active=!!state;if(!state)return;for(const l of lots){const own=state.cityOwned?.[l.id]===l.type;const level=own?(state.cityLevels?.[l.id]||0):0;l.own.visible=own;l.ring.visible=own||l===selected;l.model.scale.y=1+level*.13}},slots(){return lots.map(({id,type})=>({id,type}))},cancel(){selected=null;for(const l of lots)l.ring.visible=l.own.visible},move(){},interact(){},resize:view,assetStatus(){return {loaded:0,requested:0,settled:0}}}
