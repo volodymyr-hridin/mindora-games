@@ -74,9 +74,64 @@ const money=n=>(n<0?'−':'')+'$'+Math.abs(Math.round(n)).toLocaleString('en-US'
 const track=(name,extra={})=>{if(typeof window.gtag==='function')window.gtag('event',name,{game_name:'Life Empire',difficulty:state?.mode||mode,round_number:state?.month||1,...extra})};
 const count=id=>(state?.portfolio[id]||0),assetCount=()=>Object.values(state.portfolio).reduce((a,b)=>a+b,0);
 function assetIncome(k){const base=assets[k].net+(k==='shop'?state.shopUpgrades*70:0);const business=k!=='studio'&&k!=='fund';return base*(business?1-state.rivalPressure*.004:1)*(1+sectorTrend(k)*(k==='studio'?.5:1))}
+// Financial model: debt is a liability, not income; repayments reduce cash flow.
+function debts(){return Array.isArray(state?.loans)?state.loans:[]}
+function totalDebt(){return debts().reduce((n,l)=>n+l.balance,0)}
+function loanMonthlyPayment(principal,apr=.065,months=60){const rate=apr/12;return Math.round(100*(principal*rate/(1-Math.pow(1+rate,-months))))/100}
+function debtService(){return debts().reduce((n,l)=>n+Math.min(l.payment,l.balance*(1+l.apr/12)),0)}
+function monthlyNet(){return state.salary+passive()-state.cost-debtService()}
+function monthlyExpenses(){return state.cost+debtService()}
+function creditOffer(k,price=marketValue(k)){const down=Math.ceil(price*.35),principal=Math.max(0,price-down),payment=loanMonthlyPayment(principal);return {down,principal,payment,apr:.065,months:60}}
+function financePurchase(k,price=marketValue(k),lot=null,fromDeal=false){
+ if(!state||state.ended||modalOpen||state.moves<1||!assets[k]||k==='fund')return false;
+ if(lot&&state.cityOwned?.[lot])return false;
+ const offer=creditOffer(k,price);
+ if(state.cash<offer.down||monthlyNet()+effectiveIncome(k)-offer.payment< -Math.max(300,state.salary*.45))return false;
+ state.cash-=offer.down;state.portfolio[k]++;
+ if(lot)(state.cityOwned||(state.cityOwned={}))[lot]=k;
+ const id='loan-'+(state.nextLoanId=(state.nextLoanId||0)+1);
+ (state.loans||(state.loans=[])).push({id,asset:k,lotId:lot||null,balance:offer.principal,payment:offer.payment,apr:offer.apr,remaining:offer.months});
+ state.moves--;if(fromDeal)state.deal=null;
+ log('Financed '+assets[k].name+' with '+money(offer.down)+' down, '+money(offer.principal)+' debt and '+money(offer.payment)+'/month payments.');
+ persist();selectedBuilding=null;render();$('worldPanel').classList.remove('open');return true;
+}
+function makeLoanPayments(){
+ let paid=0;const loans=debts();
+ for(const l of loans){const interest=Math.round(l.balance*l.apr/12*100)/100;const p=Math.min(l.payment,l.balance+interest);l.balance=Math.max(0,Math.round((l.balance+interest-p)*100)/100);l.remaining=Math.max(0,(l.remaining||1)-1);paid+=p}
+ state.loans=loans.filter(l=>l.balance>.01);
+ return paid;
+}
+function repayDebt(){
+ if(!state||state.ended||modalOpen||state.moves<1||!debts().length)return;
+ const loan=debts().slice().sort((a,b)=>b.apr-a.apr||b.balance-a.balance)[0];
+ const payment=Math.min(Math.max(0,state.cash-300),loan.balance);
+ if(payment<100)return;loan.balance=Math.round((loan.balance-payment)*100)/100;
+ state.loans=debts().filter(l=>l.balance>.01);
+ state.cash-=payment;state.moves--;
+ log('Paid down '+money(payment)+' on '+assets[loan.asset].name+' loan.');
+ persist();render();openWorld(true);
+}
+function collectAssetSaleDebt(k,lot){
+ const loan=debts().find(l=>l.asset===k&&(lot?l.lotId===lot:!l.lotId))||(lot?null:debts().find(l=>l.asset===k));
+ if(!loan)return 0;const balance=loan.balance;state.loans=debts().filter(l=>l!==loan);return balance;
+}
+function newOpportunity(){
+ const keys=Object.keys(assets);
+ const k=keys[Math.floor(Math.random()*keys.length)];
+ const discount=[.12,.18,.25][Math.floor(Math.random()*3)];
+ return {kind:assets[k].value>10000?'major':'starter',asset:k,price:Math.round(marketValue(k)*(1-discount)),month:state.month};
+}
+function buyOpportunity(useCredit=false){
+ const deal=state?.deal;if(!deal||deal.month!==state.month||state.moves<1||state.ended||modalOpen)return;
+ if(useCredit)return financePurchase(deal.asset,deal.price,null,true);
+ if(state.cash<deal.price)return;
+ state.cash-=deal.price;state.portfolio[deal.asset]++;state.moves--;state.deal=null;
+ log('Purchased '+assets[deal.asset].name+' from a limited opportunity for '+money(deal.price)+'.');
+ persist();render();openWorld(true);
+}
 function lotBonus(){return Object.entries(state.cityLevels||{}).reduce((sum,[id,level])=>{const k=state.cityOwned?.[id];return sum+(assets[k]?Math.round(effectiveIncome(k)*.25*level):0)},0)}function passive(){return Object.keys(assets).reduce((sum,k)=>sum+count(k)*assetIncome(k)*(state.slowdown>0&&k!=='studio'?.8:1),0)+lotBonus()}
 function marketValue(k){return assets[k].value*(k==='studio'?state.propertyFactor:k==='fund'?state.fundFactor:1)*(1+sectorTrend(k))}
-function worth(){return state.cash+state.shopUpgrades*2200+Object.keys(assets).reduce((sum,k)=>sum+count(k)*marketValue(k),0)}
+function worth(){return state.cash+state.shopUpgrades*2200+Object.keys(assets).reduce((sum,k)=>sum+count(k)*marketValue(k),0)-totalDebt()}
 const milestones={first10k:'💎 First $10K',sixFigures:'🏆 Six-figure fortune',portfolio:'🏙️ Portfolio builder',career:'🎓 Master of your craft',balanced:'🌿 Balanced life',rival:'🛡️ Rival challenger',diverse:'🌍 Diversified empire',dream:'⭐ Personal dream achieved'};
 function dreamComplete(){return state.dream==='homes'?count('studio')>=5:state.dream==='companies'?['shop','bakery','delivery','software'].reduce((sum,k)=>sum+count(k),0)>=3:state.month>=48&&state.energy>=80&&state.cash>=10000}
 function unlockMilestones(){const checks={first10k:worth()>=10000,sixFigures:worth()>=100000,portfolio:assetCount()>=5,career:state.skills>=8,balanced:state.energy>=90&&state.month>=12,rival:state.rivalPressure<=5&&state.month>=12,diverse:Object.keys(assets).filter(k=>count(k)>0).length>=4,dream:dreamComplete()};for(const [id,ok]of Object.entries(checks))if(ok&&!state.unlocked.includes(id)){state.unlocked.push(id);log('Achievement unlocked: '+milestones[id])}}
@@ -88,21 +143,23 @@ function showModal(tag,title,message){modalOpen=true;$('eventTag').textContent=t
 function resolveEvent(alternative){if(!state?.pendingEvent||!modalOpen)return;const e=events.find(e=>e.title===state.pendingEvent);if(!e)return;const alt=alternatives[e.title];if(alternative&&alt&&state.cash>=alt.price){alt.apply(state);log('Chose an alternative: '+alt.text)}else{e.apply(state);log(e.title+'. '+e.text)}state.pendingEvent=null;modalOpen=false;$('overlay').classList.add('hidden');persist();render();if(state.cash < -12000)finish(false,'A financial shock pushed your debt beyond the safety limit.')}
 function finish(win,reason){state.ended=true;state.result=win?'win':'loss';persist();if(win){try{const best=JSON.parse(localStorage.getItem(KEY+'-best')||'{}');const key=state.mode+'-'+state.challenge;if(!best[key]||state.month<best[key]){best[key]=state.month;localStorage.setItem(KEY+'-best',JSON.stringify(best))}}catch(e){}}render();track('game_complete',{result:state.result,duration_months:state.month,net_worth:Math.round(worth())});if(win)track('game_win');const score=Math.max(0,Math.round(worth()/100+passive()*5+state.unlocked.length*150-state.month*10));showModal(win?'FINANCIAL FREEDOM':'LIFE CHAPTER ENDED',win?'You built your freedom!':'Your story reached its end',(reason||(win?'Your passive income covered your expenses for three consecutive months, with cash remaining positive.':'Your 180 months are complete. Try another strategy or difficulty.'))+' Final score: '+score.toLocaleString('en-US')+' points. Net worth: '+money(worth())+'. Unlocked achievements: '+state.unlocked.length+'.');$('eventOk').textContent='Play again →'}
 function validSave(s){return s&&s.version===5&&modes[s.mode]&&roleSpecs[s.role]&&challenges[s.challenge]&&dreams[s.dream]&&Number.isInteger(s.month)&&s.month>=1&&s.month<=180&&Number.isFinite(s.cash)&&Math.abs(s.cash)<1e9&&Number.isFinite(s.salary)&&s.salary>=0&&s.salary<1e7&&Number.isFinite(s.cost)&&s.cost>0&&s.cost<1e7&&Number.isFinite(s.energy)&&s.energy>=0&&s.energy<=100&&Number.isInteger(s.moves)&&s.moves>=0&&s.moves<=2&&Number.isInteger(s.budgetCuts)&&s.budgetCuts>=0&&s.budgetCuts<=6&&Number.isInteger(s.skills)&&s.skills>=0&&s.skills<=8&&Number.isInteger(s.shopUpgrades)&&s.shopUpgrades>=0&&s.shopUpgrades<=3&&Number.isInteger(s.freedomStreak)&&s.freedomStreak>=0&&s.freedomStreak<=3&&Number.isInteger(s.debtMonths)&&s.debtMonths>=0&&s.debtMonths<=4&&Number.isFinite(s.rivalPressure)&&s.rivalPressure>=0&&s.rivalPressure<=90&&Number.isInteger(s.rivalCount)&&s.rivalCount>=1&&s.rivalCount<=100&&Array.isArray(s.unlocked)&&s.unlocked.length<=Object.keys(milestones).length&&s.unlocked.every(id=>milestones[id])&&(!s.pendingEvent||events.some(e=>e.title===s.pendingEvent))&&s.portfolio&&Object.keys(assets).every(k=>Number.isInteger(s.portfolio[k])&&s.portfolio[k]>=0&&s.portfolio[k]<10000)&&Array.isArray(s.log)&&s.log.length<=16&&s.log.every(x=>typeof x==='string'&&x.length<300)&&Number.isFinite(s.propertyFactor)&&s.propertyFactor>.1&&s.propertyFactor<10&&Number.isFinite(s.fundFactor)&&s.fundFactor>=.3&&s.fundFactor<=3&&Number.isInteger(s.slowdown)&&s.slowdown>=0&&s.slowdown<=3&&typeof s.ended==='boolean'}
-function start(){const m=modes[mode],r=roleSpecs[role];state={version:5,mode,role,dream,challenge,month:1,cash:m.cash+r.cash,salary:m.salary+r.salary,cost:m.cost,energy:Math.min(100,m.energy+r.energy),portfolio:{studio:0,shop:0,fund:0,bakery:0,delivery:0,software:0},propertyFactor:1,fundFactor:1,slowdown:0,budgetCuts:0,skills:0,shopUpgrades:0,rivalPressure:challenge==='competition'?25:0,rivalCount:challenge==='competition'?4:2,unlocked:[],freedomStreak:0,debtMonths:0,moves:2,ended:false,pendingEvent:null,log:[]};state.mission=newMission();log('Your story begins as a '+r.name+'. Your dream: '+dreams[dream]);persist();track('game_start',{character:role,scenario:challenge});render()}
+function start(){const m=modes[mode],r=roleSpecs[role];state={version:5,mode,role,dream,challenge,phase:'building',loans:[],nextLoanId:0,deal:null,month:1,cash:m.cash+r.cash,salary:m.salary+r.salary,cost:m.cost,energy:Math.min(100,m.energy+r.energy),portfolio:{studio:0,shop:0,fund:0,bakery:0,delivery:0,software:0},propertyFactor:1,fundFactor:1,slowdown:0,budgetCuts:0,skills:0,shopUpgrades:0,rivalPressure:challenge==='competition'?25:0,rivalCount:challenge==='competition'?4:2,unlocked:[],freedomStreak:0,debtMonths:0,moves:2,ended:false,pendingEvent:null,log:[]};state.mission=newMission();log('Your story begins as a '+r.name+'. Your dream: '+dreams[dream]);persist();track('game_start',{character:role,scenario:challenge});render()}
 function effectiveIncome(k){return assetIncome(k)*(state.slowdown>0&&k!=='studio'?.8:1)}
 function actionPrice(a){return a.id==='learn'?a.price+state.skills*450:assets[a.id]?Math.round(marketValue(a.id)):a.price}
 function canAct(a){return !!state&&!state.ended&&!modalOpen&&state.moves>0&&(a.id==='sell'||(a.id==='work'||state.cash>=actionPrice(a)))&&!(a.id==='work'&&state.energy<24)&&!(a.id==='learn'&&(state.energy<12||state.skills>=8))&&!(a.id==='expand'&&(count('shop')===0||state.shopUpgrades>=3))&&!(a.id==='marketing'&&state.rivalPressure<=0)&&!(a.id==='budget'&&state.budgetCuts>=6)&&!(a.id==='sell'&&assetCount()===0)}
 function act(id){const a=actions.find(x=>x.id===id);if(!a||!canAct(a))return;const lot=selectedBuilding?.type===id?selectedBuilding.id:null;if(lot&&state.cityOwned?.[lot])return;state.cash-=actionPrice(a);
-if(id==='learn'){const gain=Math.max(75,180-state.skills*15);state.skills++;state.energy-=12;state.salary+=gain;log('Studied new skills. Salary +'+money(gain)+'/month.')}else if(id==='work'){state.energy-=24;state.cash+=900;log('Worked extra hours. Earned $900.')}else if(id==='rest'){state.energy=Math.min(100,state.energy+32);log('Made time to rest and recover.')}else if(id==='expand'){state.shopUpgrades++;log('Expanded coffee-shop operations: +$70/month per shop.')}else if(id==='marketing'){state.rivalPressure=Math.max(0,state.rivalPressure-12);log('Business strategy lowered competitive pressure by 12 points.')}else if(id==='budget'){state.budgetCuts++;state.cost=Math.max(500,state.cost-65);log('Optimized household expenses: −$65/month.')}else if(id==='sell'){const k=Object.keys(assets).filter(k=>count(k)).sort((a,b)=>marketValue(b)-marketValue(a))[0];const proceeds=Math.round(marketValue(k)*.95);state.portfolio[k]--;state.cash+=proceeds;if(k==='shop'&&count('shop')===0){state.shopUpgrades=0;log('Store expansion value was written off after the last shop closed.')}log('Sold '+assets[k].name+' for '+money(proceeds)+' after transaction fees.')}else{state.portfolio[id]++;if(lot)(state.cityOwned|| (state.cityOwned={}))[lot]=id;log('Acquired '+assets[id].name+'.')}
+if(id==='learn'){const gain=Math.max(75,180-state.skills*15);state.skills++;state.energy-=12;state.salary+=gain;log('Studied new skills. Salary +'+money(gain)+'/month.')}else if(id==='work'){state.energy-=24;state.cash+=900;log('Worked extra hours. Earned $900.')}else if(id==='rest'){state.energy=Math.min(100,state.energy+32);log('Made time to rest and recover.')}else if(id==='expand'){state.shopUpgrades++;log('Expanded coffee-shop operations: +$70/month per shop.')}else if(id==='marketing'){state.rivalPressure=Math.max(0,state.rivalPressure-12);log('Business strategy lowered competitive pressure by 12 points.')}else if(id==='budget'){state.budgetCuts++;state.cost=Math.max(500,state.cost-65);log('Optimized household expenses: −$65/month.')}else if(id==='sell'){const k=Object.keys(assets).filter(k=>count(k)).sort((a,b)=>marketValue(b)-marketValue(a))[0];const proceeds=Math.round(marketValue(k)*.95),payoff=collectAssetSaleDebt(k,null);state.portfolio[k]--;state.cash+=proceeds-payoff;if(k==='shop'&&count('shop')===0){state.shopUpgrades=0;log('Store expansion value was written off after the last shop closed.')}log('Sold '+assets[k].name+' for '+money(proceeds)+' after transaction fees.')}else{state.portfolio[id]++;if(lot)(state.cityOwned|| (state.cityOwned={}))[lot]=id;log('Acquired '+assets[id].name+'.')}
 state.moves--;persist();selectedBuilding=null;render();$('worldPanel').classList.remove('open');}
-function sellSpecific(k,lot=null){if(lot&&state.cityOwned?.[lot]!==k)return;if(!Object.hasOwn(assets,k)||!count(k)||!canAct(actions.find(a=>a.id==='sell')))return;const proceeds=Math.round(marketValue(k)*.95);state.portfolio[k]--;state.cash+=proceeds;if(k==='shop'&&!count('shop'))state.shopUpgrades=0;if(lot)delete state.cityOwned[lot];state.moves--;log('Sold '+assets[k].name+' for '+money(proceeds)+' after fees.');persist();render()}
-function advance(){if(!state||state.ended||modalOpen)return;const income=passive();const net=state.salary+income-state.cost;state.cash+=net;if(state.energy<=8){state.cash-=500;log('Burnout! Recovery costs: $500.');state.energy=20}state.energy=Math.max(0,Math.min(100,state.energy+8));log('Monthly cash flow: '+money(net)+'.');
-if(income>=state.cost&&state.cash>0){state.freedomStreak++;log('Freedom stability: '+state.freedomStreak+'/3 months.')}else state.freedomStreak=0;
-if(state.freedomStreak>=3){finish(true);return}
+function sellSpecific(k,lot=null){if(lot&&state.cityOwned?.[lot]!==k)return;if(!Object.hasOwn(assets,k)||!count(k)||!canAct(actions.find(a=>a.id==='sell')))return;const gross=Math.round(marketValue(k)*.95),payoff=collectAssetSaleDebt(k,lot),proceeds=gross-payoff;state.portfolio[k]--;state.cash+=proceeds;if(k==='shop'&&!count('shop'))state.shopUpgrades=0;if(lot)delete state.cityOwned[lot];state.moves--;log('Sold '+assets[k].name+' for '+money(gross)+' (loan payoff '+money(payoff)+', net '+money(proceeds)+').');persist();render()}
+function advance(){if(!state||state.ended||modalOpen)return;const income=passive();const gross=state.salary+income;const loanPaid=makeLoanPayments();const net=gross-state.cost-loanPaid;state.cash+=net;log('Payday: salary '+money(state.salary)+' + assets '+money(income)+' − living '+money(state.cost)+' − debt '+money(loanPaid)+'.');if(state.energy<=8){state.cash-=500;log('Burnout! Recovery costs: $500.');state.energy=20}state.energy=Math.max(0,Math.min(100,state.energy+8));log('Monthly cash flow: '+money(net)+'.');
+if(income>=monthlyExpenses()&&state.cash>0){state.freedomStreak++;log('Independent income covers all living costs and debt: '+state.freedomStreak+'/3 months.')}else state.freedomStreak=0;
+if(state.freedomStreak>=3&&state.phase!=='growth'){state.phase='growth';log('Financial freedom unlocked! Grow your wealth and complete your personal dream to win.');}
+if(state.phase==='growth'&&dreamComplete()&&worth()>=75000&&income>=monthlyExpenses()*1.35){finish(true);return}
 if(state.cash<0){state.cash-=100;state.debtMonths++;log('Overdraft fee: $100. Debt warning '+state.debtMonths+'/4.')}else state.debtMonths=0;
 if(state.debtMonths>=4||state.cash< -12000){finish(false,'Persistent debt overwhelmed your finances. Try building a reserve or selling assets sooner.');return}
 if(state.month>=180){finish(false);return}
 updateMission();if(state.slowdown>0)state.slowdown--;state.month++;state.moves=2;
+state.deal=state.month%2===0?newOpportunity():null;
 if(state.mission&&Math.floor((state.month-1)/12)!==state.mission.season){if(!state.mission.completed)log('City contract expired. A new opportunity awaits.');state.mission=newMission();log('New city contract: '+missionDetails(state.mission).name+'.')}
 if(state.month%6===0){state.rivalCount=Math.min(100,state.rivalCount+1);const rise=state.challenge==='competition'?9:4;state.rivalPressure=Math.min(90,state.rivalPressure+rise);log('A rival business expanded. Competitive pressure +'+rise+'.')}
 if(state.challenge==='inflation'&&state.month%12===0){state.cost+=80;log('Inflation increased living costs by $80/month.')}
