@@ -198,3 +198,6 @@ test('completed game shows final score and can restart without deleting personal
   const h=boot(s);h.get('advance').onclick();assert.equal(h.state().result,'win');assert.match(h.get('eventText').textContent,/Final score:/);assert.equal(h.get('eventOk').textContent,'Play again →');
   assert.ok(h.storage.has(KEY+'-best'));h.get('eventOk').onclick();assert.equal(h.storage.has(KEY),false);assert.ok(h.storage.has(KEY+'-best'));
 });
+
+test('selective sale preserves other assets and charges exactly one move',()=>{const a=boot();a.get('start').onclick();const s=a.state();s.cash=10000;s.portfolio.studio=1;s.portfolio.shop=1;s.mission.completed=true;const g=boot(s);const b=g.get('sellChoices').children.find(x=>x.textContent.startsWith('Sell Rental studio'));assert.ok(b);b.onclick();assert.equal(g.state().portfolio.studio,0);assert.equal(g.state().portfolio.shop,1);assert.equal(g.state().cash,17600);assert.equal(g.state().moves,1)});
+test('live investment quotes show adjusted price and net income',()=>{const a=boot();a.get('start').onclick();const s=a.state();s.month=13;s.cash=30000;const g=boot(s);g.districts[0].onclick();assert.match(g.get('districtPanel').children[0].textContent,/10,080/);const card=g.get('actions').children.find(b=>b.children.some(c=>c.textContent==='Buy a rental studio'));assert.match(card.children[2].textContent,/Payback:/)});
